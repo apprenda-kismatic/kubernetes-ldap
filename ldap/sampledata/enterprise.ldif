@@ -1,0 +1,63 @@
+dn: dc=kismatic,dc=com
+objectClass: dcObject
+objectClass: organization
+o: acme
+
+dn: cn=admin,dc=kismatic,dc=com
+objectClass: person
+cn: admin
+sn: admin
+description: "LDAP Admin"
+
+dn: ou=crew,dc=kismatic,dc=com
+ou: crew
+objectClass: organizationalUnit
+
+
+dn: cn=kirkj,ou=crew,dc=kismatic,dc=com
+cn: kirkj
+sn: Kirk
+gn: James Tiberius
+mail: james.kirk@kismatic.org
+objectClass: inetOrgPerson
+
+dn: cn=spock,ou=crew,dc=kismatic,dc=com
+cn: spock
+sn: Spock
+mail: spock@kismatic.org
+objectClass: inetOrgPerson
+
+dn: cn=mccoyl,ou=crew,dc=kismatic,dc=com
+cn: mccoyl
+sn: McCoy
+gn: Leonard
+mail: leonard.mccoy@kismatic.org
+objectClass: inetOrgPerson
+
+dn: cn=scottm,ou=crew,dc=kismatic,dc=com
+cn: scottm
+sn: Scott
+gn: Montgomery
+mail: Montgomery.scott@kismatic.org
+objectClass: inetOrgPerson
+
+dn: cn=uhuran,ou=crew,dc=kismatic,dc=com
+cn: uhuran
+sn: Uhura
+gn: Nyota
+mail: nyota.uhura@kismatic.org
+objectClass: inetOrgPerson
+
+dn: cn=suluh,ou=crew,dc=kismatic,dc=com
+cn: suluh
+sn: Sulu
+gn: Hikaru
+mail: hikaru.sulu@kismatic.org
+objectClass: inetOrgPerson
+
+dn: cn=chekovp,ou=crew,dc=kismatic,dc=com
+cn: chekovp
+sn: Chekov
+gn: pavel
+mail: pavel.chekov@kismatic.org
+objectClass: inetOrgPerson
