@@ -5,7 +5,7 @@ import (
 	// "errors"
 	"flag"
 	// "fmt"
-	"github.com/bcbroussard/k8s-ldap/auth"
+	"github.com/kismatic/kubernetes-ldap/auth"
 	"log"
 	"net/http"
 	"net/http/httputil"

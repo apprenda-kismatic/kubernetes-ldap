@@ -6,7 +6,7 @@ import (
 	// "encoding/base64"
 	// "errors"
 	"fmt"
-	"github.com/bcbroussard/k8s-ldap/ldap"
+	"github.com/kismatic/kubernetes-ldap/ldap"
 	"log"
 	// "net"
 	"net/http"

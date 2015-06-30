@@ -10,7 +10,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	ber "github.com/bcbroussard/k8s-ldap/asn1-ber"
+	ber "github.com/kismatic/kubernetes-ldap/asn1-ber"
 )
 
 // LDAP Application Codes

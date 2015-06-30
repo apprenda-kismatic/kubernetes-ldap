@@ -8,7 +8,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"github.com/bcbroussard/k8s-ldap/asn1-ber"
+	"github.com/kismatic/kubernetes-ldap/asn1-ber"
 	"log"
 	"net"
 	"sync"

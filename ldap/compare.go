@@ -27,7 +27,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/bcbroussard/k8s-ldap/asn1-ber"
+	"github.com/kismatic/kubernetes-ldap/asn1-ber"
 )
 
 // Compare checks to see if the attribute of the dn matches value. Returns true if it does otherwise

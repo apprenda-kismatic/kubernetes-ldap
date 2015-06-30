@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/bcbroussard/k8s-ldap/asn1-ber"
+	"github.com/kismatic/kubernetes-ldap/asn1-ber"
 )
 
 const (
