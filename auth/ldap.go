@@ -1,20 +1,13 @@
 package auth
 
 import (
-	// "crypto/sha1"
-	// "crypto/tls"
-	// "encoding/base64"
-	// "errors"
 	"fmt"
+
+	log "github.com/golang/glog"
+
 	"github.com/kismatic/kubernetes-ldap/ldap"
-	"log"
-	// "net"
+
 	"net/http"
-	// "strings"
-	"crypto/sha1"
-	"encoding/base64"
-	"net/http"
-	"strings"
 )
 
 type LdapAuth struct {
@@ -25,16 +18,14 @@ type LdapAuth struct {
 }
 
 func RequireBasicAuth(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("WWW-Authenticate", `Basic realm="kubernetes ldap"`)
-	w.WriteHeader(401)
-	w.Write([]byte("401 Unauthorized\n"))
+
 }
 
 // Grab credentials from the request
 func ParseCredentials(r *http.Request) (username, password string) {
 
-	username = "admin"    //pair[0]
-	password = "passw0rd" //pair[1]
+	username = "admin"
+	password = "passw0rd"
 
 	return
 }
@@ -53,7 +44,10 @@ func (a *LdapAuth) Authenticate(next http.Handler) http.Handler {
 		// }
 
 		if err != nil {
-			log.Fatalf("ERROR: %s\n", err.Error())
+			log.Errorf("ERROR: %s\n", err.Error())
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("internal server error\n"))
+			return
 		}
 		defer l.Close()
 
@@ -64,9 +58,11 @@ func (a *LdapAuth) Authenticate(next http.Handler) http.Handler {
 
 		err = l.Bind(user, passwd)
 		if err != nil {
-			log.Printf("ERROR: Cannot bind: %s\n", err.Error())
+			log.Errorf("ERROR: Cannot bind: %s\n", err.Error())
 
-			RequireBasicAuth(w, r)
+			w.Header().Set("WWW-Authenticate", `Basic realm="kubernetes ldap"`)
+			w.WriteHeader(401)
+			w.Write([]byte("401 Unauthorized\n"))
 			return
 		}
 

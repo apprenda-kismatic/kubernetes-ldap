@@ -1,15 +1,14 @@
 package main
 
 import (
-	// "crypto/tls"
-	// "errors"
 	"flag"
-	// "fmt"
-	"github.com/kismatic/kubernetes-ldap/auth"
-	"log"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+
+	"github.com/golang/glog"
+
+	"github.com/kismatic/kubernetes-ldap/auth"
 )
 
 // Move these to vars to flags
@@ -28,28 +27,27 @@ func NewSingleHostReverseProxy(url *url.URL) *httputil.ReverseProxy {
 	proxy.Director = func(r *http.Request) {
 		oldDirector(r)
 		r.Host = url.Host
+		rdump, _ := httputil.DumpRequest(r, true)
+		glog.Infof("proxy.Director:\n%s\n", rdump)
 	}
 	return proxy
 }
 
 func main() {
-
 	flag.Parse()
-	// if flag.NArg() != 1 {
-	// 	flag.Usage()
-	// }
+	glog.CopyStandardLogTo("INFO")
 
 	l := auth.NewLdapAuth(*ldapHost, *ldapPort, *insecure)
 
 	target, err := url.Parse(*apiserver)
 	// target, err := url.Parse("http://jsonplaceholder.typicode.com:80")
 	if err != nil {
-		log.Fatal(err)
+		glog.Fatal(err)
 	}
 	proxy := NewSingleHostReverseProxy(target)
 
 	http.Handle("/", l.Authenticate(proxy))
 
-	log.Fatal(http.ListenAndServe(":4000", nil))
+	glog.Fatal(http.ListenAndServe(":4000", nil))
 
 }
