@@ -1,8 +1,8 @@
 {
-	"ImportPath": "_/Users/dlg/repos/github.com/kismatic/kubernetes-ldap",
-	"GoVersion": "devel +c8aea7b Mon Jun 22 22:54:35 2015 +0000",
+	"ImportPath": "github.com/kismatic/kubernetes-ldap",
+	"GoVersion": "go1.4.2",
 	"Packages": [
-		"github.com/kismatic/kubernetes-ldap/cmd"
+		"./..."
 	],
 	"Deps": [
 		{
