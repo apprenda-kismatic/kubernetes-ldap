@@ -17,7 +17,7 @@ type LdapAuth struct {
 	ldapServer         string
 	ldapPort           uint
 	userLoginAttribute string
-	searchUser         string
+	searchUserDN       string
 	searchUserPassword string
 }
 
@@ -68,7 +68,7 @@ func (a *LdapAuth) Authenticate(next http.Handler) http.Handler {
 		defer l.Close()
 
 		// LDAP Auth
-		l.Debug = true
+		// l.Debug = true
 
 		// Get user's user id and password
 		uid, userPassword, err := ParseCredentials(w, r)
@@ -77,11 +77,8 @@ func (a *LdapAuth) Authenticate(next http.Handler) http.Handler {
 			return
 		}
 
-		// create the search user's dn
-		searchUserDN := fmt.Sprintf("cn=%s,%s", a.searchUser, a.baseDN)
-
 		// Test search username and password
-		err = l.Bind(searchUserDN, a.searchUserPassword)
+		err = l.Bind(a.searchUserDN, a.searchUserPassword)
 		if err != nil {
 			log.Errorf("ERROR: Cannot bind: %s\n", err.Error())
 			return
@@ -103,8 +100,9 @@ func (a *LdapAuth) Authenticate(next http.Handler) http.Handler {
 			log.Fatalf("ERROR: %s\n", err.Error())
 			return
 		}
+		// TODO(bc): Check num results
 
-		log.Infof("Search: %s -> num of entries = %d\n", search.Filter, len(sr.Entries))
+		fmt.Printf("Search: %s -> num of entries = %d\n", search.Filter, len(sr.Entries))
 		sr.PrettyPrint(0)
 
 		//Bind as user to test password
@@ -121,6 +119,6 @@ func (a *LdapAuth) Authenticate(next http.Handler) http.Handler {
 
 }
 
-func NewLdapAuth(ldapServer string, ldapPort uint, insecure bool, baseDN string, userLoginAttribute string, searchUser string, searchUserPassword string) *LdapAuth {
-	return &LdapAuth{ldapServer: ldapServer, ldapPort: ldapPort, insecure: insecure, baseDN: baseDN, userLoginAttribute: userLoginAttribute, searchUser: searchUser, searchUserPassword: searchUserPassword}
+func NewLdapAuth(ldapServer string, ldapPort uint, insecure bool, baseDN string, userLoginAttribute string, searchUserDN string, searchUserPassword string) *LdapAuth {
+	return &LdapAuth{ldapServer: ldapServer, ldapPort: ldapPort, insecure: insecure, baseDN: baseDN, userLoginAttribute: userLoginAttribute, searchUserDN: searchUserDN, searchUserPassword: searchUserPassword}
 }
