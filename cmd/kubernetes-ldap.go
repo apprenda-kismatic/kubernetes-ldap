@@ -1,24 +1,38 @@
 package main
 
 import (
-	"flag"
+	"fmt"
+	"github.com/golang/glog"
+	"github.com/kismatic/kubernetes-ldap/auth"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"os"
 
-	"github.com/golang/glog"
-
-	"github.com/kismatic/kubernetes-ldap/auth"
+	flag "github.com/spf13/pflag"
 )
 
-// Move these to vars to flags
+const usage = "kubernetes-ldap <options>"
 
-var insecure = flag.Bool("ldap-insecure", true, "Disable LDAP SSL/TLS")
-var ldapHost = flag.String("ldap-host", "localhost", "description")
-var ldapPort = flag.Uint("ldap-port", 339, "description")
+var flPort = flag.Uint("port", 4000, "Local port this proxy server will run on")
 
-// Change to consistent format (host/port)
-var apiserver = flag.String("apiserver", "http://localhost:8080", "Address of Kubernetes API server")
+var flInsecure = flag.Bool("ldap-insecure", true, "Disable LDAP SSL/TLS")
+var flLdapHost = flag.String("ldap-host", "localhost", "Host or IP of the LDAP server")
+var flLdapPort = flag.Uint("ldap-port", 389, "LDAP server port")
+var flBaseDN = flag.String("ldap-base-dn", "", "LDAP user base DN in the form 'dc=example,dc=com'")
+var flUserLoginAttribute = flag.String("ldap-user-attribute", "uid", "LDAP Username attribute for login")
+var flSearchUser = flag.String("ldap-search-user", "", "Search user DN for this app to find users (e.g.: admin). Must be a part of the baseDN.")
+var flSearchUserPassword = flag.String("ldap-search-user-password", "", "Search user attribute (eg: uid)")
+
+// TODO(bc): Change to consistent format (host/port)
+var flApiserver = flag.String("apiserver", "http://localhost:8080", "Address of Kubernetes API server")
+
+func init() {
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, "Usage: %s\n", usage)
+		flag.PrintDefaults()
+	}
+}
 
 func NewSingleHostReverseProxy(url *url.URL) *httputil.ReverseProxy {
 	proxy := httputil.NewSingleHostReverseProxy(url)
@@ -35,12 +49,28 @@ func NewSingleHostReverseProxy(url *url.URL) *httputil.ReverseProxy {
 
 func main() {
 	flag.Parse()
+
+	if *flBaseDN == "" {
+		flag.Usage()
+		glog.Fatal("kubernetes-ldap: --ldap-base-dn arg is required")
+	}
+
+	if *flBaseDN == "" {
+		flag.Usage()
+		glog.Fatal("kubernetes-ldap: --ldap-base-dn arg is required")
+	}
+
+	if *flBaseDN == "" {
+		flag.Usage()
+		glog.Fatal("kubernetes-ldap: --ldap-base-dn arg is required")
+	}
+
 	glog.CopyStandardLogTo("INFO")
 
-	l := auth.NewLdapAuth(*ldapHost, *ldapPort, *insecure)
+	l := auth.NewLdapAuth(*flLdapHost, *flLdapPort, *flInsecure, *flBaseDN, *flUserLoginAttribute, *flSearchUser, *flSearchUserPassword)
 
-	target, err := url.Parse(*apiserver)
-	// target, err := url.Parse("http://jsonplaceholder.typicode.com:80")
+	target, err := url.Parse(*flApiserver)
+
 	if err != nil {
 		glog.Fatal(err)
 	}
@@ -48,6 +78,6 @@ func main() {
 
 	http.Handle("/", l.Authenticate(proxy))
 
-	glog.Fatal(http.ListenAndServe(":4000", nil))
+	glog.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", *flPort), nil))
 
 }

@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"errors"
 	"fmt"
 
 	log "github.com/golang/glog"
@@ -11,10 +12,13 @@ import (
 )
 
 type LdapAuth struct {
-	ldapServer string
-	ldapPort   uint
-	username   string
-	insecure   bool
+	baseDN             string
+	insecure           bool
+	ldapServer         string
+	ldapPort           uint
+	userLoginAttribute string
+	searchUser         string
+	searchUserPassword string
 }
 
 func RequireBasicAuth(w http.ResponseWriter, r *http.Request) {
@@ -22,10 +26,20 @@ func RequireBasicAuth(w http.ResponseWriter, r *http.Request) {
 }
 
 // Grab credentials from the request
-func ParseCredentials(r *http.Request) (username, password string) {
+func ParseCredentials(w http.ResponseWriter, r *http.Request) (username, password string, err error) {
 
+	// username = "kirkj"
 	username = "admin"
-	password = "passw0rd"
+	password = "admin"
+
+	if username == "" || password == "" {
+		err = errors.New("Username and password missing from request")
+
+		w.Header().Set("WWW-Authenticate", `Basic realm="kubernetes ldap"`)
+		w.WriteHeader(401)
+		w.Write([]byte("401 Unauthorized\n"))
+		return
+	}
 
 	return
 }
@@ -34,8 +48,10 @@ func (a *LdapAuth) Authenticate(next http.Handler) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
+		// Test connection to the server
 		// var l *Conn
 		// var err error
+		log.Infof("connecting to: %s\n", fmt.Sprintf("%s:%d", a.ldapServer, a.ldapPort))
 
 		// if a.insecure {
 		l, err := ldap.Dial("tcp", fmt.Sprintf("%s:%d", a.ldapServer, a.ldapPort))
@@ -54,15 +70,48 @@ func (a *LdapAuth) Authenticate(next http.Handler) http.Handler {
 		// LDAP Auth
 		l.Debug = true
 
-		user, passwd := ParseCredentials(r)
-
-		err = l.Bind(user, passwd)
+		// Get user's user id and password
+		uid, userPassword, err := ParseCredentials(w, r)
 		if err != nil {
 			log.Errorf("ERROR: Cannot bind: %s\n", err.Error())
+			return
+		}
 
-			w.Header().Set("WWW-Authenticate", `Basic realm="kubernetes ldap"`)
-			w.WriteHeader(401)
-			w.Write([]byte("401 Unauthorized\n"))
+		// create the search user's dn
+		searchUserDN := fmt.Sprintf("cn=%s,%s", a.searchUser, a.baseDN)
+
+		// Test search username and password
+		err = l.Bind(searchUserDN, a.searchUserPassword)
+		if err != nil {
+			log.Errorf("ERROR: Cannot bind: %s\n", err.Error())
+			return
+		}
+
+		// Find username
+		ldapfilter := fmt.Sprintf("(cn=%s)", uid)
+		ldapAttributes := []string{a.userLoginAttribute}
+
+		search := ldap.NewSearchRequest(
+			a.baseDN,
+			ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false,
+			ldapfilter,
+			ldapAttributes,
+			nil)
+
+		sr, err := l.Search(search)
+		if err != nil {
+			log.Fatalf("ERROR: %s\n", err.Error())
+			return
+		}
+
+		log.Infof("Search: %s -> num of entries = %d\n", search.Filter, len(sr.Entries))
+		sr.PrettyPrint(0)
+
+		//Bind as user to test password
+		userDN := fmt.Sprintf("cn=%s,%s", uid, a.baseDN)
+		err = l.Bind(userDN, userPassword)
+		if err != nil {
+			log.Errorf("ERROR: Cannot bind user: %s\n", err.Error())
 			return
 		}
 
@@ -72,6 +121,6 @@ func (a *LdapAuth) Authenticate(next http.Handler) http.Handler {
 
 }
 
-func NewLdapAuth(ldapServer string, ldapPort uint, insecure bool) *LdapAuth {
-	return &LdapAuth{ldapServer: ldapServer, ldapPort: ldapPort, insecure: insecure}
+func NewLdapAuth(ldapServer string, ldapPort uint, insecure bool, baseDN string, userLoginAttribute string, searchUser string, searchUserPassword string) *LdapAuth {
+	return &LdapAuth{ldapServer: ldapServer, ldapPort: ldapPort, insecure: insecure, baseDN: baseDN, userLoginAttribute: userLoginAttribute, searchUser: searchUser, searchUserPassword: searchUserPassword}
 }
