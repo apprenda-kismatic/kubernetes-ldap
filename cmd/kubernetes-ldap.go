@@ -22,7 +22,7 @@ var flLdapPort = flag.Uint("ldap-port", 389, "LDAP server port")
 var flBaseDN = flag.String("ldap-base-dn", "", "LDAP user base DN in the form 'dc=example,dc=com'")
 var flUserLoginAttribute = flag.String("ldap-user-attribute", "uid", "LDAP Username attribute for login")
 var flSearchUser = flag.String("ldap-search-user", "", "Search user DN for this app to find users (e.g.: admin). Must be a part of the baseDN.")
-var flSearchUserPassword = flag.String("ldap-search-user-password", "", "Search user attribute (eg: uid)")
+var flSearchUserPassword = flag.String("ldap-search-user-password", "", "Search user password")
 
 // TODO(bc): Change to consistent format (host/port)
 var flApiserver = flag.String("apiserver", "http://localhost:8080", "Address of Kubernetes API server")

@@ -29,8 +29,8 @@ func RequireBasicAuth(w http.ResponseWriter, r *http.Request) {
 func ParseCredentials(w http.ResponseWriter, r *http.Request) (username, password string, err error) {
 
 	// username = "kirkj"
-	username = "admin"
-	password = "admin"
+	username = "spockywocky"
+	password = "test"
 
 	if username == "" || password == "" {
 		err = errors.New("Username and password missing from request")
@@ -88,14 +88,14 @@ func (a *LdapAuth) Authenticate(next http.Handler) http.Handler {
 		}
 
 		// Find username
-		ldapfilter := fmt.Sprintf("(cn=%s)", uid)
-		ldapAttributes := []string{a.userLoginAttribute}
+		// TODO(dlg): this is still unsanitized
+		ldapfilter := fmt.Sprintf("(%s=%s)", a.userLoginAttribute, uid)
 
 		search := ldap.NewSearchRequest(
 			a.baseDN,
 			ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false,
 			ldapfilter,
-			ldapAttributes,
+			[]string{"dn"},
 			nil)
 
 		sr, err := l.Search(search)
@@ -108,7 +108,7 @@ func (a *LdapAuth) Authenticate(next http.Handler) http.Handler {
 		sr.PrettyPrint(0)
 
 		//Bind as user to test password
-		userDN := fmt.Sprintf("cn=%s,%s", uid, a.baseDN)
+		userDN := sr.Entries[0].DN
 		err = l.Bind(userDN, userPassword)
 		if err != nil {
 			log.Errorf("ERROR: Cannot bind user: %s\n", err.Error())
