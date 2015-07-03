@@ -1,14 +1,15 @@
 package auth
 
 import (
+	"bytes"
+	"encoding/base64"
 	"errors"
 	"fmt"
+	"github.com/kismatic/kubernetes-ldap/ldap"
+	"net/http"
+	"strings"
 
 	log "github.com/golang/glog"
-
-	"github.com/kismatic/kubernetes-ldap/ldap"
-
-	"net/http"
 )
 
 type LdapAuth struct {
@@ -21,24 +22,55 @@ type LdapAuth struct {
 	searchUserPassword string
 }
 
-func RequireBasicAuth(w http.ResponseWriter, r *http.Request) {
+func RequireBasicAuthPrompt(w http.ResponseWriter) {
 
+	w.Header().Set("WWW-Authenticate", `Basic realm="kubernetes ldap"`)
+	w.WriteHeader(401)
+	w.Write([]byte("401 Unauthorized\n"))
+
+	return
 }
 
 // Grab credentials from the request
-func ParseCredentials(w http.ResponseWriter, r *http.Request) (username, password string, err error) {
+func ParseCredentials(w http.ResponseWriter, r *http.Request) (username, password string, e error) {
 
-	// username = "kirkj"
-	username = "spockywocky"
-	password = "test"
+	// username = "spockywocky"
+	// password = "test"
 
-	if username == "" || password == "" {
-		err = errors.New("Username and password missing from request")
+	const basicScheme string = "Basic "
 
-		w.Header().Set("WWW-Authenticate", `Basic realm="kubernetes ldap"`)
-		w.WriteHeader(401)
-		w.Write([]byte("401 Unauthorized\n"))
-		return
+	// Confirm the request is sending Basic Authentication credentials.
+	auth := r.Header.Get("Authorization")
+	if strings.HasPrefix(auth, basicScheme) {
+
+		// TODO(bc): make .v(2) level
+		log.Infof("Trying auth of: %s\n", username)
+
+		// Get the plain-text username and password from the request
+		// The first six characters are skipped - e.g. "Basic ".
+		str, err := base64.StdEncoding.DecodeString(auth[len(basicScheme):])
+		if err != nil {
+			e = errors.New("Could not parse basic authentication credentials from request")
+			return
+		}
+
+		creds := bytes.SplitN(str, []byte(":"), 2)
+
+		if len(creds) == 2 {
+			username = string(creds[0])
+			password = string(creds[1])
+		}
+
+		if username == "" || password == "" {
+			e = errors.New("Username and password missing from request")
+			return
+		}
+
+	} else if r.Header.Get("LDAPToken") != "" {
+		// TODO: test for auth token, parse username
+
+	} else {
+		e = errors.New("Authentication missing from request")
 	}
 
 	return
@@ -73,14 +105,16 @@ func (a *LdapAuth) Authenticate(next http.Handler) http.Handler {
 		// Get user's user id and password
 		uid, userPassword, err := ParseCredentials(w, r)
 		if err != nil {
-			log.Errorf("ERROR: Cannot bind: %s\n", err.Error())
+			log.Warningf("Warning: Missing credentials: %s\n", err.Error())
+			RequireBasicAuthPrompt(w)
 			return
 		}
 
 		// Test search username and password
 		err = l.Bind(a.searchUserDN, a.searchUserPassword)
 		if err != nil {
-			log.Errorf("ERROR: Cannot bind: %s\n", err.Error())
+			log.Errorf("ERROR: Cannot authenticate search user: %s\n", err.Error())
+			RequireBasicAuthPrompt(w)
 			return
 		}
 
@@ -98,18 +132,31 @@ func (a *LdapAuth) Authenticate(next http.Handler) http.Handler {
 		sr, err := l.Search(search)
 		if err != nil {
 			log.Fatalf("ERROR: %s\n", err.Error())
+			RequireBasicAuthPrompt(w)
 			return
 		}
-		// TODO(bc): Check num results
 
 		fmt.Printf("Search: %s -> num of entries = %d\n", search.Filter, len(sr.Entries))
 		sr.PrettyPrint(0)
+
+		if len(sr.Entries) == 0 {
+			log.Errorf("ERROR: user not found: %s\n", uid)
+			RequireBasicAuthPrompt(w)
+			return
+		}
+
+		if len(sr.Entries) > 1 {
+			log.Errorf("ERROR: more than one user found for: %s\n", uid)
+			RequireBasicAuthPrompt(w)
+			return
+		}
 
 		//Bind as user to test password
 		userDN := sr.Entries[0].DN
 		err = l.Bind(userDN, userPassword)
 		if err != nil {
-			log.Errorf("ERROR: Cannot bind user: %s\n", err.Error())
+			log.Errorf("ERROR: Cannot authenticate user: %s\n", err.Error())
+			RequireBasicAuthPrompt(w)
 			return
 		}
 

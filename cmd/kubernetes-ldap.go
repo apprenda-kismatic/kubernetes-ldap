@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"fmt"
 	"github.com/golang/glog"
 	"github.com/kismatic/kubernetes-ldap/auth"
@@ -8,21 +9,31 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"os"
+	"time"
 
 	flag "github.com/spf13/pflag"
 )
 
-const usage = "kubernetes-ldap <options>"
+const (
+	usage            = "kubernetes-ldap <options>"
+	ReadWriteTimeout = time.Minute * 60
+)
 
 var flPort = flag.Uint("port", 4000, "Local port this proxy server will run on")
 
-var flInsecure = flag.Bool("ldap-insecure", true, "Disable LDAP SSL/TLS")
+var flInsecure = flag.Bool("ldap-insecure", false, "Disable LDAP TLS")
 var flLdapHost = flag.String("ldap-host", "", "Host or IP of the LDAP server")
 var flLdapPort = flag.Uint("ldap-port", 389, "LDAP server port")
 var flBaseDN = flag.String("ldap-base-dn", "", "LDAP user base DN in the form 'dc=example,dc=com'")
 var flUserLoginAttribute = flag.String("ldap-user-attribute", "uid", "LDAP Username attribute for login")
 var flSearchUserDN = flag.String("ldap-search-user-dn", "", "Search user DN for this app to find users (e.g.: cn=admin,dc=example,dc=com).")
 var flSearchUserPassword = flag.String("ldap-search-user-password", "", "Search user password")
+
+var flTLSCertFile = flag.String("tls-cert-file", "",
+	"File containing x509 Certificate for HTTPS.  (CA cert, if any, concatenated after server cert).")
+var flTLSPrivateKeyFile = flag.String("tls-private-key-file", "", "File containing x509 private key matching --tls-cert-file.")
+var flCertDirectory = flag.String("cert-dir", "", "The directory where the TLS certs are located (by default /var/run/kubernetes). "+
+	"If --tls-cert-file and --tls-private-key-file are provided, this flag will be ignored.")
 
 // TODO(bc): Change to consistent format (host/port)
 var flApiserver = flag.String("apiserver", "", "Address of Kubernetes API server (e.g.: http://k8smaster.kismatic.com:8080")
@@ -32,6 +43,7 @@ func init() {
 		fmt.Fprintf(os.Stderr, "Usage: %s\n", usage)
 		flag.PrintDefaults()
 	}
+
 }
 
 func NewSingleHostReverseProxy(url *url.URL) *httputil.ReverseProxy {
@@ -75,19 +87,32 @@ func main() {
 		glog.Fatal("kubernetes-ldap: --apiserver arg is required")
 	}
 
-	glog.CopyStandardLogTo("INFO")
+	// glog.CopyStandardLogTo("INFO")
 
 	l := auth.NewLdapAuth(*flLdapHost, *flLdapPort, *flInsecure, *flBaseDN, *flUserLoginAttribute, *flSearchUserDN, *flSearchUserPassword)
 
 	target, err := url.Parse(*flApiserver)
-
 	if err != nil {
 		glog.Fatal(err)
 	}
 	proxy := NewSingleHostReverseProxy(target)
 
+	server := &http.Server{Addr: fmt.Sprintf(":%d", *flPort)}
+
 	http.Handle("/", l.Authenticate(proxy))
 
-	glog.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", *flPort), nil))
+	glog.Infof("Serving on %s", fmt.Sprintf(":%d", *flPort))
+
+	if *flTLSCertFile != "" && *flTLSPrivateKeyFile != "" {
+
+		server.TLSConfig = &tls.Config{
+			// Change default from SSLv3 to TLSv1.0 (because of POODLE vulnerability)
+			MinVersion: tls.VersionTLS10,
+		}
+		glog.Fatal(server.ListenAndServeTLS(*flTLSCertFile, *flTLSPrivateKeyFile))
+
+	} else {
+		glog.Fatal(server.ListenAndServe())
+	}
 
 }
