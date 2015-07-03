@@ -103,6 +103,8 @@ func main() {
 
 	glog.Infof("Serving on %s", fmt.Sprintf(":%d", *flPort))
 
+	// TODO(bc): enable cert-dir flag
+
 	if *flTLSCertFile != "" && *flTLSPrivateKeyFile != "" {
 
 		server.TLSConfig = &tls.Config{
