@@ -139,11 +139,15 @@ func (e *Entry) Print() {
 	}
 }
 
-func (e *Entry) PrettyPrint(indent int) {
-	fmt.Printf("%sDN: %s\n", strings.Repeat(" ", indent), e.DN)
+func (e *Entry) SPrettyPrint(indent int) (s string) {
+	s = fmt.Sprintf("%sDN: %s\n", strings.Repeat(" ", indent), e.DN)
 	for _, attr := range e.Attributes {
-		attr.PrettyPrint(indent + 2)
+		s += attr.PrettyPrint(indent + 2)
 	}
+}
+
+func (e *Entry) PrettyPrint(indent int) {
+	fmt.Println(e.SPrettyPrint(indent))
 }
 
 type EntryAttribute struct {

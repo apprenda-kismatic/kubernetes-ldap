@@ -2,7 +2,10 @@ package token
 
 import (
 	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
 	"fmt"
+	"io/ioutil"
 
 	pb "./proto"
 	"github.com/golang/protobuf/proto"
@@ -30,13 +33,39 @@ const (
 	curveJose = jose.ES256 // curveJose is the name of the JWS algorithm
 )
 
+var (
+	curveEll = elliptic.P256() // ellCurve is the
+)
+
+// GenerateKeypair generates a public and private ECDSA key, for
+// later user with NewIssuer or NewVerifier. These are written
+// as binary files, because PEM is pointless.
+func GenerateKeypair(filename string) (err error) {
+	priv, err := ecdsa.GenerateKey(curveEll, rand.Reader)
+	if err != nil {
+		return
+	}
+	err = ioutil.WriteFile(filename+".priv", elliptic.Marshal(curveEll, priv.x, priv.y), FileMode(0600))
+	if err != nil {
+		return
+	}
+	err = ioutil.WriteFile(filename+".pub", elliptic.Marshal(curveEll, pub.x, pub.y), FileMode(0644))
+	return
+	// TODO(dlg): also write out JWK
+}
+
 // NewIssuer is, for the moment, a thin wrapper around Square's
 // go-jose library to issue ECDSA-P256 JWS tokens.
-func NewIssuer(key []byte) (iss *Issuer, err error) {
+func NewIssuer(filename string) (iss *Issuer, err error) {
 	// We use P-256, because Go has a constant-time implementation
 	// of it. Go correctly checks that points are on the curve. A
 	// version of Go > 1.4 is recommended, because ECDSA signatures
 	// in previous versions are unsafe.
+	key, err := ioutil.ReadFile(filename + ".priv")
+	if err != nil {
+		return
+	}
+
 	privateKey, err := jose.LoadPrivateKey(key)
 	if err != nil {
 		return
@@ -92,6 +121,23 @@ func (iss *Issuer) Issue(token *pb.Token) (signed string, err error) {
 		}
 	}
 	return s, nil
+}
+
+// NewVerify reads a verification key file, and returns a verifier
+// to verify token objects.
+func NewVerifier(basename string) (v *Verifier, err error) {
+	buf, err := ioutil.ReadFile(basename + ".pub")
+	if err != nil {
+		return
+	}
+	pub := &ecdsa.PublicKey{
+		Curve: curveEll,
+	}
+	pub.x, pub.y = elliptic.Unmarshal(curveEll, buf)
+	jws, err := jose.LoadPublicKey(pub)
+	if err != nil {
+		return
+	}
 }
 
 // Verify checks that a token's signature is valid, and that the
