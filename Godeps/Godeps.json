@@ -1,0 +1,22 @@
+{
+	"ImportPath": "github.com/kismatic/kubernetes-ldap",
+	"GoVersion": "go1.4.2",
+	"Packages": [
+		"./..."
+	],
+	"Deps": [
+		{
+			"ImportPath": "github.com/golang/glog",
+			"Rev": "44145f04b68cf362d9c4df2182967c2275eaefed"
+		},
+		{
+			"ImportPath": "github.com/spf13/pflag",
+			"Rev": "67cbc198fd11dab704b214c1e629a97af392c085"
+		},
+		{
+			"ImportPath": "gopkg.in/asn1-ber.v1",
+			"Comment": "v1",
+			"Rev": "9eae18c3681ae3d3c677ac2b80a8fe57de45fc09"
+		}
+	]
+}
