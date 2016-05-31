@@ -6,16 +6,17 @@ import (
 	"crypto/rand"
 	"fmt"
 	"io/ioutil"
+	"os"
 
-	pb "./proto"
 	"github.com/golang/protobuf/proto"
+	"github.com/kismatic/kubernetes-ldap/token/proto"
 	jose "github.com/square/go-jose"
 )
 
 // Issuer represents an issuer of tokens under a particular public key.
 type Issuer struct {
 	Verifier
-	signer *jose.Signer
+	signer jose.Signer
 	// LogTokenIssued is an optional user-provided function to log each
 	// token that is issued. If nil, no logging is performed. It
 	// should not panic; if it returns an error, the token is not
@@ -45,11 +46,12 @@ func GenerateKeypair(filename string) (err error) {
 	if err != nil {
 		return
 	}
-	err = ioutil.WriteFile(filename+".priv", elliptic.Marshal(curveEll, priv.x, priv.y), FileMode(0600))
+	err = ioutil.WriteFile(filename+".priv", elliptic.Marshal(curveEll, priv.X, priv.Y), os.FileMode(0600))
 	if err != nil {
 		return
 	}
-	err = ioutil.WriteFile(filename+".pub", elliptic.Marshal(curveEll, pub.x, pub.y), FileMode(0644))
+	pub := priv.PublicKey
+	err = ioutil.WriteFile(filename+".pub", elliptic.Marshal(curveEll, pub.X, pub.Y), os.FileMode(0644))
 	return
 	// TODO(dlg): also write out JWK
 }
@@ -87,58 +89,61 @@ func NewIssuer(filename string) (iss *Issuer, err error) {
 		return
 	}
 	iss = &Issuer{
-		signer:    &signer,
-		publicKey: ecdsaKey.PublicKey,
+		signer: signer,
 	}
+	iss.publicKey = &ecdsaKey.PublicKey
 	return
 }
 
 // Issue issues a new, signed token, logging it to iss.LogToken
 // if that's non-nil.
-func (iss *Issuer) Issue(token *pb.Token) (signed string, err error) {
-	b, err := proto.Marshal(token)
+func (iss *Issuer) Issue(token *pb.Token) (string, error) {
+	tokenBytes, err := proto.Marshal(token)
 	if err != nil {
 		// panic? what are the conditions under which this can fail?
-		return
+		return "", err
 	}
-	jws, err := iss.signer.Sign(token)
+	jws, err := iss.signer.Sign(tokenBytes)
 	if err != nil {
-		return
+		return "", err
 	}
 	signed, err := jws.CompactSerialize()
 	if err != nil {
-		return
+		return "", err
 	}
 	// This optionally logs the token issuance; it is passed both
 	// the unsigned payload and the signed token. (For schemes in
 	// which the user has a private and public key, it's safe to
 	// log the signed token. Otherwise, please don't do that.)
+	// log the signed token. Otherwise, please don't do that.)
 	// TODO(dlg): switch to SignedToken protobuf format
-	if iss.LogTokenIssued != nil {
+	/*if iss.LogTokenIssued != nil {
 		err = iss.LogTokenIssued(s, b)
 		if err != nil {
 			return nil, err
 		}
 	}
-	return s, nil
+	*/
+	return signed, nil
 }
 
 // NewVerify reads a verification key file, and returns a verifier
 // to verify token objects.
-func NewVerifier(basename string) (v *Verifier, err error) {
-	buf, err := ioutil.ReadFile(basename + ".pub")
-	if err != nil {
-		return
-	}
-	pub := &ecdsa.PublicKey{
-		Curve: curveEll,
-	}
-	pub.x, pub.y = elliptic.Unmarshal(curveEll, buf)
-	jws, err := jose.LoadPublicKey(pub)
-	if err != nil {
-		return
-	}
-}
+// func NewVerifier(basename string) (v *Verifier, err error) {
+// 	buf, err := ioutil.ReadFile(basename + ".pub")
+// 	if err != nil {
+// 		return
+// 	}
+// 	pub := &ecdsa.PublicKey{
+// 		Curve: curveEll,
+// 	}
+// 	pub.X, pub.Y = elliptic.Unmarshal(curveEll, buf)
+// 	jws, err := jose.LoadPublicKey(pub)
+// 	if err != nil {
+// 		return
+// 	}
+// 	return
+// }
 
 // Verify checks that a token's signature is valid, and that the
 // protobuf is syntactically valid as a token.
@@ -151,10 +156,11 @@ func (v *Verifier) Verify(s string) (token *pb.Token, err error) {
 	if err != nil {
 		return
 	}
-	token := &pb.Token{}
-	err := proto.Unmarshal(payload, token)
+	token = &pb.Token{}
+	err = proto.Unmarshal(payload, token)
 	if err != nil {
 		token = nil
 		return
 	}
+	return
 }

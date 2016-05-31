@@ -3,13 +3,14 @@ package main
 import (
 	"crypto/tls"
 	"fmt"
-	"github.com/golang/glog"
-	"github.com/kismatic/kubernetes-ldap/auth"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"os"
 	"time"
+
+	"github.com/golang/glog"
+	"github.com/kismatic/kubernetes-ldap/auth"
 
 	flag "github.com/spf13/pflag"
 )
@@ -99,7 +100,7 @@ func main() {
 
 	server := &http.Server{Addr: fmt.Sprintf(":%d", *flPort)}
 
-	http.Handle("/", l.Authenticate(proxy))
+	http.Handle("/", l.RequireAuthorization(proxy))
 
 	glog.Infof("Serving on %s", fmt.Sprintf(":%d", *flPort))
 

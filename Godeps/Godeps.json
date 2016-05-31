@@ -1,17 +1,43 @@
 {
 	"ImportPath": "github.com/kismatic/kubernetes-ldap",
-	"GoVersion": "go1.4.2",
+	"GoVersion": "go1.6",
+	"GodepVersion": "v71",
 	"Packages": [
 		"./..."
 	],
 	"Deps": [
 		{
+			"ImportPath": "github.com/go-ldap/ldap",
+			"Comment": "v2.3.0",
+			"Rev": "0e7db8eb77695b5a952f0e5d78df9ab160050c73"
+		},
+		{
 			"ImportPath": "github.com/golang/glog",
 			"Rev": "44145f04b68cf362d9c4df2182967c2275eaefed"
 		},
 		{
+			"ImportPath": "github.com/golang/protobuf/proto",
+			"Rev": "9e6977f30c91c78396e719e164e57f9287fff42c"
+		},
+		{
+			"ImportPath": "github.com/golang/protobuf/ptypes/any",
+			"Rev": "9e6977f30c91c78396e719e164e57f9287fff42c"
+		},
+		{
 			"ImportPath": "github.com/spf13/pflag",
 			"Rev": "67cbc198fd11dab704b214c1e629a97af392c085"
+		},
+		{
+			"ImportPath": "github.com/square/go-jose",
+			"Rev": "d2a847139a1442cada879cc05cc4080485b8d193"
+		},
+		{
+			"ImportPath": "github.com/square/go-jose/cipher",
+			"Rev": "d2a847139a1442cada879cc05cc4080485b8d193"
+		},
+		{
+			"ImportPath": "github.com/square/go-jose/json",
+			"Rev": "d2a847139a1442cada879cc05cc4080485b8d193"
 		},
 		{
 			"ImportPath": "gopkg.in/asn1-ber.v1",
