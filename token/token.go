@@ -4,6 +4,7 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
+	"crypto/x509"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -46,12 +47,20 @@ func GenerateKeypair(filename string) (err error) {
 	if err != nil {
 		return
 	}
-	err = ioutil.WriteFile(filename+".priv", elliptic.Marshal(curveEll, priv.X, priv.Y), os.FileMode(0600))
+	keyPEM, err := x509.MarshalECPrivateKey(priv)
+	if err != nil {
+		return err
+	}
+	err = ioutil.WriteFile(filename+".priv", keyPEM, os.FileMode(0600))
 	if err != nil {
 		return
 	}
-	pub := priv.PublicKey
-	err = ioutil.WriteFile(filename+".pub", elliptic.Marshal(curveEll, pub.X, pub.Y), os.FileMode(0644))
+	pub := priv.Public()
+	pubKeyPEM, err := x509.MarshalPKIXPublicKey(pub)
+	if err != nil {
+		return fmt.Errorf("Error marshalling public key: %v", err)
+	}
+	err = ioutil.WriteFile(filename+".pub", pubKeyPEM, os.FileMode(0644))
 	return
 	// TODO(dlg): also write out JWK
 }
@@ -74,7 +83,7 @@ func NewIssuer(filename string) (iss *Issuer, err error) {
 	}
 	// TODO(dlg): Once JOSE supports it, make sure that this works for curve25519
 	// Check that it's actually an ECDSA key,
-	ecdsaKey, ok := privateKey.(ecdsa.PrivateKey)
+	ecdsaKey, ok := privateKey.(*ecdsa.PrivateKey)
 	if !ok {
 		err = fmt.Errorf("expected an ECDSA private key, but got a key of type %T", privateKey)
 		return
@@ -129,21 +138,24 @@ func (iss *Issuer) Issue(token *pb.Token) (string, error) {
 
 // NewVerify reads a verification key file, and returns a verifier
 // to verify token objects.
-// func NewVerifier(basename string) (v *Verifier, err error) {
-// 	buf, err := ioutil.ReadFile(basename + ".pub")
-// 	if err != nil {
-// 		return
-// 	}
-// 	pub := &ecdsa.PublicKey{
-// 		Curve: curveEll,
-// 	}
-// 	pub.X, pub.Y = elliptic.Unmarshal(curveEll, buf)
-// 	jws, err := jose.LoadPublicKey(pub)
-// 	if err != nil {
-// 		return
-// 	}
-// 	return
-// }
+func NewVerifier(basename string) (*Verifier, error) {
+	buf, err := ioutil.ReadFile(basename + ".pub")
+	if err != nil {
+		return nil, err
+	}
+	pubKey, err := jose.LoadPublicKey(buf)
+	if err != nil {
+		return nil, err
+	}
+	ecdsaPubKey, ok := pubKey.(*ecdsa.PublicKey)
+	if !ok {
+		return nil, fmt.Errorf("Expected the public key to use ECDSA, but got a key of type %T", pubKey)
+	}
+	v := &Verifier{
+		publicKey: ecdsaPubKey,
+	}
+	return v, nil
+}
 
 // Verify checks that a token's signature is valid, and that the
 // protobuf is syntactically valid as a token.
