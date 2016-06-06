@@ -23,6 +23,11 @@ func NewTokenWebhook(verifier token.Verifier) *TokenWebhook {
 // ServeHTTP verifies the incoming token and sends the user's info
 // back if the token is valid.
 func (tw *TokenWebhook) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
+	if req.Method != http.MethodPost {
+		resp.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
 	trr := &TokenReviewRequest{}
 	err := json.NewDecoder(req.Body).Decode(trr)
 	if err != nil {
