@@ -13,8 +13,9 @@ import (
 // LDAPTokenIssuer issues cryptographically secure tokens after authenticating the
 // user against a backing LDAP directory.
 type LDAPTokenIssuer struct {
-	LDAPClient  *ldap.Client
-	TokenIssuer *token.Issuer
+	LDAPServer        string
+	LDAPAuthenticator ldap.Authenticator
+	TokenSigner       token.Signer
 }
 
 func (lti *LDAPTokenIssuer) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
@@ -26,7 +27,7 @@ func (lti *LDAPTokenIssuer) ServeHTTP(resp http.ResponseWriter, req *http.Reques
 	}
 
 	// Authenticate the user via LDAP
-	ldapEntry, err := lti.LDAPClient.Authenticate(user, password)
+	ldapEntry, err := lti.LDAPAuthenticator.Authenticate(user, password)
 	if err != nil {
 		glog.Errorf("Error authenticating user: %v", err)
 		resp.WriteHeader(http.StatusUnauthorized)
@@ -37,7 +38,7 @@ func (lti *LDAPTokenIssuer) ServeHTTP(resp http.ResponseWriter, req *http.Reques
 	token := lti.createToken(ldapEntry)
 
 	// Sign token and return
-	signedToken, err := lti.TokenIssuer.Issue(token)
+	signedToken, err := lti.TokenSigner.Sign(token)
 	if err != nil {
 		glog.Errorf("Error signing token: %v", err)
 		resp.WriteHeader(http.StatusInternalServerError)
@@ -54,7 +55,7 @@ func (lti *LDAPTokenIssuer) createToken(ldapEntry *goldap.Entry) *pb.Token {
 		Assertions: &pb.Token_StringAssertions{
 			StringAssertions: &pb.StringAssertions{
 				Assertions: map[string]string{
-					"ldapServer": lti.LDAPClient.LdapServer,
+					"ldapServer": lti.LDAPServer,
 					"userDN":     ldapEntry.DN,
 				},
 			},

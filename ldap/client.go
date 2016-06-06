@@ -8,7 +8,12 @@ import (
 	"github.com/go-ldap/ldap"
 )
 
-// LdapClient represents a connection, and associated lookup strategy,
+// Authenticator authenticates a user against an LDAP directory
+type Authenticator interface {
+	Authenticate(username, password string) (*ldap.Entry, error)
+}
+
+// Client represents a connection, and associated lookup strategy,
 // for authentication via an LDAP server.
 type Client struct {
 	BaseDN             string

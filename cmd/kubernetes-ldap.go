@@ -65,9 +65,14 @@ func main() {
 	}
 
 	var err error
-	tokenIssuer, err := token.NewIssuer(keypairFilename)
+	tokenSigner, err := token.NewSigner(keypairFilename)
 	if err != nil {
 		glog.Fatalf("Error creating token issuer: %v", err)
+	}
+
+	tokenVerifier, err := token.NewVerifier(keypairFilename)
+	if err != nil {
+		glog.Fatalf("Error creating token verifier: %v", err)
 	}
 
 	// TODO(abrand): Figure out LDAP TLS config
@@ -84,11 +89,11 @@ func main() {
 
 	server := &http.Server{Addr: fmt.Sprintf(":%d", *flServerPort)}
 
-	webhook := auth.NewTokenWebhook(&tokenIssuer.Verifier)
+	webhook := auth.NewTokenWebhook(tokenVerifier)
 
 	ldapTokenIssuer := &auth.LDAPTokenIssuer{
-		LDAPClient:  ldapClient,
-		TokenIssuer: tokenIssuer,
+		LDAPAuthenticator: ldapClient,
+		TokenSigner:       tokenSigner,
 	}
 
 	// Endpoint for authenticating with token

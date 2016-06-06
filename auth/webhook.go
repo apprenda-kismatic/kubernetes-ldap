@@ -10,11 +10,11 @@ import (
 
 // TokenWebhook responds to requests from the K8s authentication webhook
 type TokenWebhook struct {
-	tokenVerifier *token.Verifier
+	tokenVerifier token.Verifier
 }
 
 // NewTokenWebhook returns a TokenWebhook with the given verifier
-func NewTokenWebhook(verifier *token.Verifier) *TokenWebhook {
+func NewTokenWebhook(verifier token.Verifier) *TokenWebhook {
 	return &TokenWebhook{
 		tokenVerifier: verifier,
 	}
