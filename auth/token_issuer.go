@@ -17,7 +17,7 @@ type LDAPTokenIssuer struct {
 	TokenIssuer *token.Issuer
 }
 
-func (thi *LDAPTokenIssuer) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
+func (lti *LDAPTokenIssuer) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 	user, password, ok := req.BasicAuth()
 	if !ok {
 		resp.Header().Add("WWW-Authenticate", `Basic realm="kubernetes ldap"`)
@@ -26,7 +26,7 @@ func (thi *LDAPTokenIssuer) ServeHTTP(resp http.ResponseWriter, req *http.Reques
 	}
 
 	// Authenticate the user via LDAP
-	ldapEntry, err := thi.LDAPClient.Authenticate(user, password)
+	ldapEntry, err := lti.LDAPClient.Authenticate(user, password)
 	if err != nil {
 		glog.Errorf("Error authenticating user: %v", err)
 		resp.WriteHeader(http.StatusUnauthorized)
@@ -34,10 +34,10 @@ func (thi *LDAPTokenIssuer) ServeHTTP(resp http.ResponseWriter, req *http.Reques
 	}
 
 	// Auth was successful, create token
-	token := thi.createToken(ldapEntry)
+	token := lti.createToken(ldapEntry)
 
 	// Sign token and return
-	signedToken, err := thi.TokenIssuer.Issue(token)
+	signedToken, err := lti.TokenIssuer.Issue(token)
 	if err != nil {
 		glog.Errorf("Error signing token: %v", err)
 		resp.WriteHeader(http.StatusInternalServerError)
@@ -48,13 +48,13 @@ func (thi *LDAPTokenIssuer) ServeHTTP(resp http.ResponseWriter, req *http.Reques
 	resp.Write([]byte(signedToken))
 }
 
-func (thi *LDAPTokenIssuer) createToken(ldapEntry *goldap.Entry) *pb.Token {
+func (lti *LDAPTokenIssuer) createToken(ldapEntry *goldap.Entry) *pb.Token {
 	return &pb.Token{
 		Username: ldapEntry.DN,
 		Assertions: &pb.Token_StringAssertions{
 			StringAssertions: &pb.StringAssertions{
 				Assertions: map[string]string{
-					"ldapServer": thi.LDAPClient.LdapServer,
+					"ldapServer": lti.LDAPClient.LdapServer,
 					"userDN":     ldapEntry.DN,
 				},
 			},

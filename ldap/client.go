@@ -22,8 +22,8 @@ type Client struct {
 // Authenticate a user against the LDAP directory. Returns an LDAP entry if password
 // is valid, otherwise returns an error.
 // TODO(abrand): Currently assumes all users can search. Not sure if this is a reasonable assumption.
-func (la *Client) Authenticate(username, password string) (*ldap.Entry, error) {
-	conn, err := la.connect()
+func (c *Client) Authenticate(username, password string) (*ldap.Entry, error) {
+	conn, err := c.connect()
 	if err != nil {
 		return nil, fmt.Errorf("Error openning LDAP connection: %v", err)
 	}
@@ -34,7 +34,7 @@ func (la *Client) Authenticate(username, password string) (*ldap.Entry, error) {
 		return nil, fmt.Errorf("Error binding user to LDAP server: %v", err)
 	}
 
-	req := la.newUserSearchRequest(username)
+	req := c.newUserSearchRequest(username)
 
 	res, err := conn.Search(req)
 	if err != nil {
@@ -53,16 +53,16 @@ func (la *Client) Authenticate(username, password string) (*ldap.Entry, error) {
 }
 
 // Open a connection to the LDAP server
-func (la *Client) connect() (*ldap.Conn, error) {
-	address := fmt.Sprintf("%s:%d", la.LdapServer, la.LdapPort)
+func (c *Client) connect() (*ldap.Conn, error) {
+	address := fmt.Sprintf("%s:%d", c.LdapServer, c.LdapPort)
 
-	if la.TLSConfig != nil {
-		return ldap.DialTLS("tcp", address, la.TLSConfig)
+	if c.TLSConfig != nil {
+		return ldap.DialTLS("tcp", address, c.TLSConfig)
 	}
 
 	// This will send passwords in clear text (LDAP doesn't obfuscate password in any way),
 	// thus we use a flag to enable this mode
-	if la.TLSConfig == nil && la.AllowInsecure {
+	if c.TLSConfig == nil && c.AllowInsecure {
 		return ldap.Dial("tcp", address)
 	}
 
@@ -70,11 +70,11 @@ func (la *Client) connect() (*ldap.Conn, error) {
 	return nil, errors.New("The LDAP TLS Configuration was not set.")
 }
 
-func (la *Client) newUserSearchRequest(username string) *ldap.SearchRequest {
+func (c *Client) newUserSearchRequest(username string) *ldap.SearchRequest {
 	// TODO(abrand): sanitize
-	userFilter := fmt.Sprintf("(%s=%s)", la.UserLoginAttribute, username)
+	userFilter := fmt.Sprintf("(%s=%s)", c.UserLoginAttribute, username)
 	return &ldap.SearchRequest{
-		BaseDN:       la.BaseDN,
+		BaseDN:       c.BaseDN,
 		Scope:        ldap.ScopeWholeSubtree,
 		DerefAliases: ldap.NeverDerefAliases, // ????
 		SizeLimit:    2,

@@ -13,7 +13,7 @@ type TokenWebhook struct {
 	tokenVerifier *token.Verifier
 }
 
-// New returns a TokenWebhook
+// NewTokenWebhook returns a TokenWebhook with the given verifier
 func NewTokenWebhook(verifier *token.Verifier) *TokenWebhook {
 	return &TokenWebhook{
 		tokenVerifier: verifier,
@@ -41,14 +41,12 @@ func (tw *TokenWebhook) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 	}
 
 	// Token is valid.
-	status := TokenReviewStatus{
+	trr.Status = TokenReviewStatus{
 		Authenticated: true,
 		User: UserInfo{
 			Username: token.Username,
 		},
 	}
-
-	trr.Status = status
 
 	respJSON, err := json.Marshal(trr)
 	if err != nil {

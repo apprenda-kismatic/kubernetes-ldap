@@ -40,8 +40,7 @@ var (
 )
 
 // GenerateKeypair generates a public and private ECDSA key, for
-// later user with NewIssuer or NewVerifier. These are written
-// as binary files, because PEM is pointless.
+// later user with NewIssuer or NewVerifier.
 func GenerateKeypair(filename string) (err error) {
 	priv, err := ecdsa.GenerateKey(curveEll, rand.Reader)
 	if err != nil {
@@ -136,7 +135,7 @@ func (iss *Issuer) Issue(token *pb.Token) (string, error) {
 	return signed, nil
 }
 
-// NewVerify reads a verification key file, and returns a verifier
+// NewVerifier reads a verification key file, and returns a verifier
 // to verify token objects.
 func NewVerifier(basename string) (*Verifier, error) {
 	buf, err := ioutil.ReadFile(basename + ".pub")
