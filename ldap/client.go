@@ -28,7 +28,7 @@ type Client struct {
 // is valid, otherwise returns an error.
 // TODO(abrand): Currently assumes all users can search. Not sure if this is a reasonable assumption.
 func (c *Client) Authenticate(username, password string) (*ldap.Entry, error) {
-	conn, err := c.connect()
+	conn, err := c.dial()
 	if err != nil {
 		return nil, fmt.Errorf("Error openning LDAP connection: %v", err)
 	}
@@ -57,8 +57,8 @@ func (c *Client) Authenticate(username, password string) (*ldap.Entry, error) {
 	return res.Entries[0], nil
 }
 
-// Open a connection to the LDAP server
-func (c *Client) connect() (*ldap.Conn, error) {
+// Create a new TCP connection to the LDAP server
+func (c *Client) dial() (*ldap.Conn, error) {
 	address := fmt.Sprintf("%s:%d", c.LdapServer, c.LdapPort)
 
 	if c.TLSConfig != nil {
