@@ -6,6 +6,7 @@
 # Folders
 _obj
 _test
+.vscode
 
 # Architecture specific extensions/prefixes
 *.[568vq]
@@ -33,5 +34,4 @@ Godeps/_workspace
 Session.vim
 .netrwhist
 *~
-
 
