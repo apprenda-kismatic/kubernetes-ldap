@@ -11,6 +11,8 @@ import (
 	"github.com/kismatic/kubernetes-ldap/ldap"
 	"github.com/kismatic/kubernetes-ldap/token"
 
+	goflag "flag"
+
 	flag "github.com/spf13/pflag"
 )
 
@@ -39,6 +41,7 @@ func init() {
 }
 
 func main() {
+	flag.CommandLine.AddGoFlagSet(goflag.CommandLine) // support glog flags
 	flag.Parse()
 
 	if *flLdapHost == "" {

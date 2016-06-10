@@ -1,7 +1,7 @@
 {
 	"ImportPath": "github.com/kismatic/kubernetes-ldap",
 	"GoVersion": "go1.6",
-	"GodepVersion": "v71",
+	"GodepVersion": "v72",
 	"Packages": [
 		"./..."
 	],
@@ -25,7 +25,7 @@
 		},
 		{
 			"ImportPath": "github.com/spf13/pflag",
-			"Rev": "67cbc198fd11dab704b214c1e629a97af392c085"
+			"Rev": "cb88ea77998c3f024757528e3305022ab50b43be"
 		},
 		{
 			"ImportPath": "github.com/square/go-jose",
