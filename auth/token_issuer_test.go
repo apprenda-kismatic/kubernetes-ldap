@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/go-ldap/ldap"
-	"github.com/kismatic/kubernetes-ldap/token/proto"
+	"github.com/kismatic/kubernetes-ldap/token"
 )
 
 type dummyLDAP struct {
@@ -25,7 +25,7 @@ type dummySigner struct {
 	err    error
 }
 
-func (d dummySigner) Sign(token *pb.Token) (string, error) {
+func (d dummySigner) Sign(token *token.AuthToken) (string, error) {
 	return d.signed, d.err
 }
 
@@ -106,10 +106,9 @@ func TestCreateToken(t *testing.T) {
 		t.Errorf("Unexpected username in token. Expected: '%s'. Got: '%s'.", e.DN, tok.Username)
 	}
 
-	obtainedAssertions := tok.GetStringAssertions().Assertions
 	for k, v := range expectedAssertions {
-		if obtainedAssertions[k] != v {
-			t.Errorf("Expected assertion '%s' to be '%s'. Got '%s'", k, v, obtainedAssertions[k])
+		if tok.Assertions[k] != v {
+			t.Errorf("Expected assertion '%s' to be '%s'. Got '%s'", k, v, tok.Assertions[k])
 		}
 	}
 }

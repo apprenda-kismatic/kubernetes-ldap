@@ -8,15 +8,15 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/kismatic/kubernetes-ldap/token/proto"
+	"github.com/kismatic/kubernetes-ldap/token"
 )
 
 type dummyVerifier struct {
-	token *pb.Token
+	token *token.AuthToken
 	err   error
 }
 
-func (dv *dummyVerifier) Verify(s string) (token *pb.Token, err error) {
+func (dv *dummyVerifier) Verify(s string) (token *token.AuthToken, err error) {
 	return dv.token, dv.err
 }
 
@@ -24,7 +24,7 @@ func TestWebhook(t *testing.T) {
 
 	cases := []struct {
 		reqMethod     string
-		verifiedToken *pb.Token
+		verifiedToken *token.AuthToken
 		verifyErr     error
 		authenticated bool
 		expectedCode  int
@@ -32,7 +32,7 @@ func TestWebhook(t *testing.T) {
 		{
 			// Happy path. Token is valid
 			reqMethod: "POST",
-			verifiedToken: &pb.Token{
+			verifiedToken: &token.AuthToken{
 				Username: "username",
 			},
 			authenticated: true,

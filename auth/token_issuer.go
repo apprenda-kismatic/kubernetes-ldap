@@ -7,7 +7,6 @@ import (
 	"github.com/golang/glog"
 	"github.com/kismatic/kubernetes-ldap/ldap"
 	"github.com/kismatic/kubernetes-ldap/token"
-	"github.com/kismatic/kubernetes-ldap/token/proto"
 )
 
 // LDAPTokenIssuer issues cryptographically secure tokens after authenticating the
@@ -49,16 +48,12 @@ func (lti *LDAPTokenIssuer) ServeHTTP(resp http.ResponseWriter, req *http.Reques
 	resp.Write([]byte(signedToken))
 }
 
-func (lti *LDAPTokenIssuer) createToken(ldapEntry *goldap.Entry) *pb.Token {
-	return &pb.Token{
+func (lti *LDAPTokenIssuer) createToken(ldapEntry *goldap.Entry) *token.AuthToken {
+	return &token.AuthToken{
 		Username: ldapEntry.DN,
-		Assertions: &pb.Token_StringAssertions{
-			StringAssertions: &pb.StringAssertions{
-				Assertions: map[string]string{
-					"ldapServer": lti.LDAPServer,
-					"userDN":     ldapEntry.DN,
-				},
-			},
+		Assertions: map[string]string{
+			"ldapServer": lti.LDAPServer,
+			"userDN":     ldapEntry.DN,
 		},
 	}
 }
