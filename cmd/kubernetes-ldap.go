@@ -44,38 +44,28 @@ func main() {
 	flag.CommandLine.AddGoFlagSet(goflag.CommandLine) // support glog flags
 	flag.Parse()
 
-	if *flLdapHost == "" {
-		glog.Fatal("kubernetes-ldap: --ldap-host arg is required")
-	}
-
-	if *flBaseDN == "" {
-		glog.Fatal("kubernetes-ldap: --ldap-base-dn arg is required")
-	}
-
-	if *flTLSCertFile == "" {
-		glog.Fatal("kubernetes-ldap: --tls-cert-file is required.")
-	}
-
-	if *flTLSPrivateKeyFile == "" {
-		glog.Fatal("kubernetes-ldap: --tls-private-key-file is required.")
-	}
+	// validate required flags
+	requireFlag("--ldap-host", flLdapHost)
+	requireFlag("--ldap-base-dn", flBaseDN)
+	requireFlag("--tls-cert-file", flTLSCertFile)
+	requireFlag("--tls-private-key", flTLSPrivateKeyFile)
 
 	glog.CopyStandardLogTo("INFO")
 
 	keypairFilename := "signing"
 	if err := token.GenerateKeypair(keypairFilename); err != nil {
-		glog.Fatalf("Error generating key pair: %v", err)
+		glog.Errorf("Error generating key pair: %v", err)
 	}
 
 	var err error
 	tokenSigner, err := token.NewSigner(keypairFilename)
 	if err != nil {
-		glog.Fatalf("Error creating token issuer: %v", err)
+		glog.Errorf("Error creating token issuer: %v", err)
 	}
 
 	tokenVerifier, err := token.NewVerifier(keypairFilename)
 	if err != nil {
-		glog.Fatalf("Error creating token verifier: %v", err)
+		glog.Errorf("Error creating token verifier: %v", err)
 	}
 
 	// TODO(abrand): Figure out LDAP TLS config
@@ -113,4 +103,11 @@ func main() {
 	}
 	glog.Fatal(server.ListenAndServeTLS(*flTLSCertFile, *flTLSPrivateKeyFile))
 
+}
+
+func requireFlag(flagName string, flagValue *string) {
+	if *flagValue == "" {
+		fmt.Fprintf(os.Stderr, "kubernetes-ldap: %s is required. \nUse -h flag for help.\n", flagName)
+		os.Exit(1)
+	}
 }
