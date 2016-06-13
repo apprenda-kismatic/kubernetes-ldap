@@ -27,6 +27,7 @@ var flBaseDN = flag.String("ldap-base-dn", "", "LDAP user base DN in the form 'd
 var flUserLoginAttribute = flag.String("ldap-user-attribute", "uid", "LDAP Username attribute for login")
 var flSearchUserDN = flag.String("ldap-search-user-dn", "", "Search user DN for this app to find users (e.g.: cn=admin,dc=example,dc=com).")
 var flSearchUserPassword = flag.String("ldap-search-user-password", "", "Search user password")
+var flSkipLdapTLSVerification = flag.Bool("ldap-skip-tls-verification", false, "Skip LDAP server TLS verification")
 
 var flServerPort = flag.Uint("port", 4000, "Local port this proxy server will run on")
 var flTLSCertFile = flag.String("tls-cert-file", "",
@@ -68,8 +69,10 @@ func main() {
 		glog.Errorf("Error creating token verifier: %v", err)
 	}
 
-	// TODO(abrand): Figure out LDAP TLS config
-	var ldapTLSConfig *tls.Config
+	ldapTLSConfig := &tls.Config{
+		ServerName:         *flLdapHost,
+		InsecureSkipVerify: *flSkipLdapTLSVerification,
+	}
 
 	ldapClient := &ldap.Client{
 		BaseDN:             *flBaseDN,
@@ -77,6 +80,8 @@ func main() {
 		LdapPort:           *flLdapPort,
 		AllowInsecure:      *flLdapAllowInsecure,
 		UserLoginAttribute: *flUserLoginAttribute,
+		SearchUserDN:       *flSearchUserDN,
+		SearchUserPassword: *flSearchUserPassword,
 		TLSConfig:          ldapTLSConfig,
 	}
 

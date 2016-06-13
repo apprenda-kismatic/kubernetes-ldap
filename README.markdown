@@ -21,7 +21,9 @@ kubernetes-ldap --ldap-host ldap.example.com \
     --ldap-base-dn "DC=example,DC=com" \
     --tls-cert-file pathToCert \
     --tls-private-key-file pathToKey \
-    --ldap-user-attribute userPrincipalName
+    --ldap-user-attribute userPrincipalName \
+    --ldap-search-user-dn "OU=engineering,DC=example,DC=com" (optional) \
+    --ldap-search-user-password pwd (optional)
 ```
 
 Configuring the Kubernetes Webhook

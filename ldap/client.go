@@ -21,29 +21,36 @@ type Client struct {
 	LdapPort           uint
 	AllowInsecure      bool
 	UserLoginAttribute string
+	SearchUserDN       string
+	SearchUserPassword string
 	TLSConfig          *tls.Config
 }
 
 // Authenticate a user against the LDAP directory. Returns an LDAP entry if password
 // is valid, otherwise returns an error.
-// TODO(abrand): Currently assumes all users can search. Not sure if this is a reasonable assumption.
 func (c *Client) Authenticate(username, password string) (*ldap.Entry, error) {
 	conn, err := c.dial()
 	if err != nil {
-		return nil, fmt.Errorf("Error openning LDAP connection: %v", err)
+		return nil, fmt.Errorf("Error opening LDAP connection: %v", err)
 	}
 	defer conn.Close()
 
-	// Bind user to validate credentials
-	if err = conn.Bind(username, password); err != nil {
+	// Bind user to perform the search
+	if c.SearchUserDN != "" && c.SearchUserPassword != "" {
+		err = conn.Bind(c.SearchUserDN, c.SearchUserPassword)
+	} else {
+		err = conn.Bind(username, password)
+	}
+	if err != nil {
 		return nil, fmt.Errorf("Error binding user to LDAP server: %v", err)
 	}
 
 	req := c.newUserSearchRequest(username)
 
+	// Do a search to ensure the user exists within the BaseDN scope
 	res, err := conn.Search(req)
 	if err != nil {
-		return nil, fmt.Errorf("Error searching for user: %v", err)
+		return nil, fmt.Errorf("Error searching for user %s: %v", username, err)
 	}
 
 	switch {
@@ -51,6 +58,16 @@ func (c *Client) Authenticate(username, password string) (*ldap.Entry, error) {
 		return nil, fmt.Errorf("No result for the search filter '%s'", req.Filter)
 	case len(res.Entries) > 1:
 		return nil, fmt.Errorf("Multiple entries found for the search filter '%s': %+v", req.Filter, res.Entries)
+	}
+
+	// Now that we know the user exists within the BaseDN scope
+	// let's do user bind to check credentials using the full DN instead of
+	// the attribute used for search
+	if c.SearchUserDN != "" && c.SearchUserPassword != "" {
+		err = conn.Bind(res.Entries[0].DN, password)
+		if err != nil {
+			return nil, fmt.Errorf("Error binding user %s, invalid credentials: %v", username, err)
+		}
 	}
 
 	// Single user entry found
