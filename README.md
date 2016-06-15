@@ -1,4 +1,6 @@
 # kubernetes-ldap
+[![Build Status](https://travis-ci.org/kismatic/kubernetes-ldap.svg?branch=master)](https://travis-ci.org/kismatic/kubernetes-ldap)
+
 Lightweight Directory Access Protocol (LDAP) for Kubernetes™
 
 Getting Started
