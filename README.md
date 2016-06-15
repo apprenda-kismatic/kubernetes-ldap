@@ -82,7 +82,7 @@ kubectl -s="https://localhost:6443" --user=alice get nodes
 
 ## Project Status
 
- Kubernetes LDAP is at an early stage and under active development. We do not recommend its use in production, but we encourage you to try out Kubernetes LDAP and provide feedback via issues and pull requests.
+Kubernetes LDAP is at an early stage and under active development. We do not recommend its use in production, but we encourage you to try out Kubernetes LDAP and provide feedback via issues and pull requests.
 
 ## Contributing to Kubernetes LDAP
 
