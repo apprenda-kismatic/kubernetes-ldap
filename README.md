@@ -89,6 +89,18 @@ Kubernetes LDAP is at an early stage and under active development. We do not rec
 Kubernetes LDAP is an open source project and contributors are welcome!
 Join us on IRC at [#kismatic on freenode.net](http://webchat.freenode.net/?channels=%23kismatic&uio=d4), [file an issue](https://github.com/kismatic/kubernetes-ldap/issues) here on Github.
 
+### Are you ready to add to the discussion?
+
+We have presence on:
+
+ * [Twitter](https://twitter.com/kismatic)
+
+For Q&A, our threads are at:
+
+ * [Stack Overflow](http://stackoverflow.com/questions/tagged/kismatic)
+ * [Slack](http://slack.k6c.io/)
+
+
 ## Licensing
 
 Unless otherwise noted, all code in the Kubernetes LDAP repository is licensed under the [Apache 2.0 license](LICENSE). Some portions of the codebase are derived from other projects under different licenses; the appropriate information can be found in the header of those source files, as applicable.
