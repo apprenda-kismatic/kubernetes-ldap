@@ -12,7 +12,10 @@ The current implementation exposes two endpoints:
 - /authenticate: Handles token authentication requests coming from Kubernetes
 - /ldapAuth: Issues token to be used when interacting with the Kubernetes API
 
-Pre-requisites
+The service can be installed either standalone (described in this document) or
+[as a service in the cluster](in-cluster.md).
+
+Prerequisites for standalone installation
 --------------
 - Certificate and corresponding private key for the webhook server
 - Certificate and corresponding private key for the Kubernetes webhook client
