@@ -48,8 +48,6 @@ func main() {
 	// validate required flags
 	requireFlag("--ldap-host", flLdapHost)
 	requireFlag("--ldap-base-dn", flBaseDN)
-	requireFlag("--tls-cert-file", flTLSCertFile)
-	requireFlag("--tls-private-key", flTLSPrivateKeyFile)
 
 	glog.CopyStandardLogTo("INFO")
 
@@ -102,11 +100,15 @@ func main() {
 
 	glog.Infof("Serving on %s", fmt.Sprintf(":%d", *flServerPort))
 
-	server.TLSConfig = &tls.Config{
-		// Change default from SSLv3 to TLSv1.0 (because of POODLE vulnerability)
-		MinVersion: tls.VersionTLS10,
+	if (*flTLSCertFile != "") {
+		server.TLSConfig = &tls.Config{
+			// Change default from SSLv3 to TLSv1.0 (because of POODLE vulnerability)
+			MinVersion: tls.VersionTLS10,
+		}
+		glog.Fatal(server.ListenAndServeTLS(*flTLSCertFile, *flTLSPrivateKeyFile))
+	} else {
+		glog.Fatal(server.ListenAndServe())
 	}
-	glog.Fatal(server.ListenAndServeTLS(*flTLSCertFile, *flTLSPrivateKeyFile))
 
 }
 
