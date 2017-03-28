@@ -3,10 +3,10 @@ package auth
 import (
 	"net/http"
 
+	"github.com/apprenda-kismatic/kubernetes-ldap/ldap"
+	"github.com/apprenda-kismatic/kubernetes-ldap/token"
 	goldap "github.com/go-ldap/ldap"
 	"github.com/golang/glog"
-	"github.com/kismatic/kubernetes-ldap/ldap"
-	"github.com/kismatic/kubernetes-ldap/token"
 )
 
 // LDAPTokenIssuer issues cryptographically secure tokens after authenticating the

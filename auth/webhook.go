@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/apprenda-kismatic/kubernetes-ldap/token"
 	"github.com/golang/glog"
-	"github.com/kismatic/kubernetes-ldap/token"
 )
 
 // TokenWebhook responds to requests from the K8s authentication webhook
