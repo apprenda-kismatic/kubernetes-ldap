@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/apprenda-kismatic/kubernetes-ldap/token"
 	"github.com/go-ldap/ldap"
-	"github.com/kismatic/kubernetes-ldap/token"
 )
 
 type dummyLDAP struct {
