@@ -36,3 +36,5 @@ Session.vim
 .netrwhist
 *~
 
+# Glade will recreate this, so don't need in source control
+vendor/
