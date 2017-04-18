@@ -26,6 +26,6 @@ vendor: bin/glide
 bin/glide:
 	@echo "Downloading glide"
 	mkdir -p bin
-	curl -L https://github.com/Masterminds/glide/releases/download/0.10.2/glide-0.10.2-$(GOOS)-$(GOARCH).tar.gz | tar -xz -C bin
+	curl -L https://github.com/Masterminds/glide/releases/download/v0.12.3/glide-v0.12.3-$(GOOS)-$(GOARCH).tar.gz | tar -xz -C bin
 	mv bin/$(GOOS)-$(GOARCH)/glide bin/glide
 	rm -r bin/$(GOOS)-$(GOARCH)
