@@ -13,7 +13,6 @@ cache:
 
 before_script:
   - git config --global http.sslVerify true
-  - ls -la
   - mkdir -p $GOPATH/src/gitlab.informatik.haw-hamburg.de/icc/kubernetes-ldap/
   - mv ./* $GOPATH/src/gitlab.informatik.haw-hamburg.de/icc/kubernetes-ldap/
   - mkdir /tools
@@ -38,7 +37,6 @@ buildAndTest:
     - glide install
     - go test gitlab.informatik.haw-hamburg.de/icc/kubernetes-ldap/$(glide novendor)
     - go build -a -installsuffix cgo gitlab.informatik.haw-hamburg.de/icc/kubernetes-ldap
-    - ls -la
     - mv ./kubernetes-ldap /$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME/icc-k8s-ldap
   artifacts:
     paths:
