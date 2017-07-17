@@ -13,6 +13,7 @@ cache:
 
 before_script:
   - git config --global http.sslVerify true
+  - ls -la
   - mkdir -p $GOPATH/src/gitlab.informatik.haw-hamburg.de/icc/kubernetes-ldap/
   - mv ./* $GOPATH/src/gitlab.informatik.haw-hamburg.de/icc/kubernetes-ldap/
   - mkdir /tools
