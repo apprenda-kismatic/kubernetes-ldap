@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/apprenda-kismatic/kubernetes-ldap/token"
+	"gitlab.informatik.haw-hamburg.de/icc/kubernetes-ldap/token"
 	"github.com/go-ldap/ldap"
 )
 
