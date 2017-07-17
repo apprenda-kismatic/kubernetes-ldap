@@ -6,7 +6,7 @@ stages:
 variables:
   DOCKER_HOST: "tcp://localhost:2375"
   DOCKER_REGISTRY: "nexus.informatik.haw-hamburg.de"
-  SERVICE_NAME: "icc-k8s-ldap"
+  SERVICE_NAME: "cmd"
 cache:
   paths:
     - vendor
@@ -36,8 +36,8 @@ buildAndTest:
   script:
     - glide install
     - go test gitlab.informatik.haw-hamburg.de/icc/kubernetes-ldap/$(glide novendor)
-    - go build -a -installsuffix cgo gitlab.informatik.haw-hamburg.de/icc/kubernetes-ldap/icc-k8s-ldap
-    - mv ./icc-k8s-ldap /$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME/
+    - go build -a -installsuffix cgo gitlab.informatik.haw-hamburg.de/icc/kubernetes-ldap/cmd
+    - mv ./cmd /$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME/icc-k8s-ldap
   artifacts:
     paths:
     - ./icc-k8s-ldap
