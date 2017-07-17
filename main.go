@@ -1,4 +1,4 @@
-package main
+package kubernetes_ldap
 
 import (
 	"crypto/tls"
