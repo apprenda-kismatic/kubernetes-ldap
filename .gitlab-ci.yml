@@ -6,7 +6,7 @@ stages:
 variables:
   DOCKER_HOST: "tcp://localhost:2375"
   DOCKER_REGISTRY: "nexus.informatik.haw-hamburg.de"
-  SERVICE_NAME: "cmd"
+  SERVICE_NAME: "icc-k8s-ldap"
 cache:
   paths:
     - vendor
