@@ -37,6 +37,7 @@ buildAndTest:
     - glide install
     - go test gitlab.informatik.haw-hamburg.de/icc/kubernetes-ldap/$(glide novendor)
     - go build -a -installsuffix cgo gitlab.informatik.haw-hamburg.de/icc/kubernetes-ldap
+    - ls -la
     - mv ./kubernetes-ldap /$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME/icc-k8s-ldap
   artifacts:
     paths:
