@@ -28,7 +28,7 @@ buildAndTest:
   tags:
    - k8s
   only:
-   - master
+   - icc
   image: nexus.informatik.haw-hamburg.de/golang:1.8.1
   variables:
     CGO_ENABLED: "0"
@@ -48,7 +48,7 @@ deploy:
   tags:
    - k8s
   only:
-   - master
+   - icc
   image: nexus.informatik.haw-hamburg.de/docker:stable-dind
   services:
     - nexus.informatik.haw-hamburg.de/docker:stable-dind
