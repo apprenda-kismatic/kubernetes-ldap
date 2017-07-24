@@ -78,13 +78,14 @@ func (c *Client) Authenticate(username, password string) (*ldap.Entry, error) {
 func (c *Client) dial() (*ldap.Conn, error) {
 	address := fmt.Sprintf("%s:%d", c.LdapServer, c.LdapPort)
 
-	if c.TLSConfig != nil {
+
+	if c.TLSConfig.InsecureSkipVerify == false {
 		return ldap.DialTLS("tcp", address, c.TLSConfig)
 	}
 
 	// This will send passwords in clear text (LDAP doesn't obfuscate password in any way),
 	// thus we use a flag to enable this mode
-	if c.TLSConfig == nil && c.AllowInsecure {
+	if c.TLSConfig.InsecureSkipVerify == true && c.AllowInsecure {
 		return ldap.Dial("tcp", address)
 	}
 
