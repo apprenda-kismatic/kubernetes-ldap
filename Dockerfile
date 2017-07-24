@@ -2,7 +2,7 @@ FROM alpine
 
 MAINTAINER christian.huening@haw-hamburg.de
 
-# MARS Mission Control API runs on port 8080.
+# K8s LDAP Connector runs on 8080
 EXPOSE 8080
 
 ENV DOCKER_HOST=unix:///host/run/docker.sock

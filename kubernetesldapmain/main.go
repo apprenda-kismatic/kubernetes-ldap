@@ -29,7 +29,7 @@ var flSearchUserDN = flag.String("ldap-search-user-dn", "", "Search user DN for 
 var flSearchUserPassword = flag.String("ldap-search-user-password", "", "Search user password")
 var flSkipLdapTLSVerification = flag.Bool("ldap-skip-tls-verification", false, "Skip LDAP server TLS verification")
 
-var flServerPort = flag.Uint("port", 4000, "Local port this proxy server will run on")
+var flServerPort = flag.Uint("port", 8080, "Local port this proxy server will run on")
 var flTLSCertFile = flag.String("tls-cert-file", "",
 	"File containing x509 Certificate for HTTPS.  (CA cert, if any, concatenated after server cert).")
 var flTLSPrivateKeyFile = flag.String("tls-private-key-file", "", "File containing x509 private key matching --tls-cert-file.")
