@@ -74,6 +74,7 @@ func Main() {
 		InsecureSkipVerify: *flSkipLdapTLSVerification,
 	}
 
+
 	ldapClient := &ldap.Client{
 		BaseDN:             *flBaseDN,
 		LdapServer:         *flLdapHost,
