@@ -8,7 +8,7 @@ EXPOSE 8080
 ENV DOCKER_HOST=unix:///host/run/docker.sock
 ENV DOCKER_API_VERSION=1.24
 
-
+ADD cert /app/cert/
 ADD ./icc-k8s-ldap /app/
 
 WORKDIR /app
