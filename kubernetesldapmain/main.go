@@ -30,9 +30,10 @@ var flSearchUserPassword = flag.String("ldap-search-user-password", "", "Search 
 var flSkipLdapTLSVerification = flag.Bool("ldap-skip-tls-verification", false, "Skip LDAP server TLS verification")
 
 var flServerPort = flag.Uint("port", 8080, "Local port this proxy server will run on")
+var flHostTLS = flag.Bool("host-tls", false, "Set to true if you want to host via HTTPS, --tls-cert-file and --tls-private-key-file will be required then.")
 var flTLSCertFile = flag.String("tls-cert-file", "",
-	"File containing x509 Certificate for HTTPS.  (CA cert, if any, concatenated after server cert).")
-var flTLSPrivateKeyFile = flag.String("tls-private-key-file", "", "File containing x509 private key matching --tls-cert-file.")
+	"File containing x509 Certificate for HTTPS.  (CA cert, if any, concatenated after server cert). Requires --host-tls set to true to have an effect!")
+var flTLSPrivateKeyFile = flag.String("tls-private-key-file", "", "File containing x509 private key matching --tls-cert-file. Requires --host-tls set to true to have an effect!")
 
 func init() {
 	flag.Usage = func() {
@@ -48,8 +49,11 @@ func Main() {
 	// validate required flags
 	requireFlag("--ldap-host", flLdapHost)
 	requireFlag("--ldap-base-dn", flBaseDN)
-	requireFlag("--tls-cert-file", flTLSCertFile)
-	requireFlag("--tls-private-key", flTLSPrivateKeyFile)
+
+	if *flHostTLS {
+		requireFlag("--tls-cert-file", flTLSCertFile)
+		requireFlag("--tls-private-key", flTLSPrivateKeyFile)
+	}
 
 	glog.CopyStandardLogTo("INFO")
 
@@ -110,7 +114,11 @@ func Main() {
 		// Change default from SSLv3 to TLSv1.0 (because of POODLE vulnerability)
 		MinVersion: tls.VersionTLS10,
 	}
-	glog.Fatal(server.ListenAndServeTLS(*flTLSCertFile, *flTLSPrivateKeyFile))
+	if *flHostTLS {
+		glog.Fatal(server.ListenAndServeTLS(*flTLSCertFile, *flTLSPrivateKeyFile))
+	} else {
+		glog.Fatal(server.ListenAndServe())
+	}
 
 }
 
