@@ -101,6 +101,9 @@ func Main() {
 	// Endpoint for token issuance after LDAP auth
 	http.Handle("/ldapAuth", ldapTokenIssuer)
 
+	// Endpoint for liveness probe
+	http.HandleFunc("/healthz", healthz)
+
 	glog.Infof("Serving on %s", fmt.Sprintf(":%d", *flServerPort))
 
 	server.TLSConfig = &tls.Config{
@@ -109,6 +112,11 @@ func Main() {
 	}
 	glog.Fatal(server.ListenAndServeTLS(*flTLSCertFile, *flTLSPrivateKeyFile))
 
+}
+
+func healthz(w http.ResponseWriter, r *http.Request){
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("ok"))
 }
 
 func requireFlag(flagName string, flagValue *string) {
