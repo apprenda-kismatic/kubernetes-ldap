@@ -1,4 +1,4 @@
-FROM alpine
+FROM nexus.informatik.haw-hamburg.de/debian
 
 MAINTAINER christian.huening@haw-hamburg.de
 
