@@ -1,4 +1,4 @@
-FROM nexus.informatik.haw-hamburg.de/debian
+FROM nexus.informatik.haw-hamburg.de/debian:stretch
 
 MAINTAINER christian.huening@haw-hamburg.de
 
