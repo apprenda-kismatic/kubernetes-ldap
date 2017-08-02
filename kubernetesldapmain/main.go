@@ -30,10 +30,13 @@ var flSearchUserPassword = flag.String("ldap-search-user-password", "", "Search 
 var flSkipLdapTLSVerification = flag.Bool("ldap-skip-tls-verification", false, "Skip LDAP server TLS verification")
 
 var flServerPort = flag.Uint("port", 8080, "Local port this proxy server will run on")
+var flAuthNServerPort = flag.Uint("authn-port", 8443, "Local port this server will run on for AuthN endpoint")
 var flHostTLS = flag.Bool("host-tls", false, "Set to true if you want to host via HTTPS, --tls-cert-file and --tls-private-key-file will be required then.")
-var flTLSCertFile = flag.String("tls-cert-file", "",
-	"File containing x509 Certificate for HTTPS.  (CA cert, if any, concatenated after server cert). Requires --host-tls set to true to have an effect!")
+var flTLSCertFile = flag.String("tls-cert-file", "","File containing x509 Certificate for HTTPS.  (CA cert, if any, concatenated after server cert). Requires --host-tls set to true to have an effect!")
 var flTLSPrivateKeyFile = flag.String("tls-private-key-file", "", "File containing x509 private key matching --tls-cert-file. Requires --host-tls set to true to have an effect!")
+
+var flAuthNTLSCertFile = flag.String("authn-tls-cert-file", "","File containing x509 Certificate for AuthN in-cluster HTTPS.  (CA cert, if any, concatenated after server cert).")
+var flAuthNTLSPrivateKeyFile = flag.String("authn-tls-private-key-file", "", "File containing x509 private key matching --authn-tls-cert-file. ")
 
 func init() {
 	flag.Usage = func() {
@@ -49,6 +52,8 @@ func Main() {
 	// validate required flags
 	requireFlag("--ldap-host", flLdapHost)
 	requireFlag("--ldap-base-dn", flBaseDN)
+	requireFlag("--authn-tls-cert-file", flAuthNTLSCertFile)
+	requireFlag("--authn-tls-private-key-file", flAuthNTLSPrivateKeyFile)
 
 	if *flHostTLS {
 		requireFlag("--tls-cert-file", flTLSCertFile)
@@ -90,8 +95,6 @@ func Main() {
 		TLSConfig:          ldapTLSConfig,
 	}
 
-	server := &http.Server{Addr: fmt.Sprintf(":%d", *flServerPort)}
-
 	webhook := auth.NewTokenWebhook(tokenVerifier)
 
 	ldapTokenIssuer := &auth.LDAPTokenIssuer{
@@ -100,24 +103,43 @@ func Main() {
 	}
 
 	// Endpoint for authenticating with token
-	http.Handle("/authenticate", webhook)
+	routerForApiServer := http.NewServeMux()
+	routerForApiServer.Handle("/authenticate", webhook)
+
 
 	// Endpoint for token issuance after LDAP auth
-	http.Handle("/ldapAuth", ldapTokenIssuer)
+	routerPublicTokenEndpoint := http.NewServeMux()
+	routerPublicTokenEndpoint.Handle("/ldapAuth", ldapTokenIssuer)
 
 	// Endpoint for liveness probe
 	http.HandleFunc("/healthz", healthz)
 
 	glog.Infof("Serving on %s", fmt.Sprintf(":%d", *flServerPort))
 
-	server.TLSConfig = &tls.Config{
+	tlsCfg := &tls.Config{
 		// Change default from SSLv3 to TLSv1.0 (because of POODLE vulnerability)
 		MinVersion: tls.VersionTLS10,
 	}
+
+	serverPublicTokenEndpoint := &http.Server{
+		Addr: fmt.Sprintf(":%d", *flServerPort),
+		Handler: routerPublicTokenEndpoint,
+		TLSConfig: tlsCfg,
+	}
+
+	serverForApiServer := &http.Server{
+		Addr: fmt.Sprintf(":%d", *flAuthNServerPort),
+		Handler: routerForApiServer,
+		TLSConfig: tlsCfg,
+	}
+
+
 	if *flHostTLS {
-		glog.Fatal(server.ListenAndServeTLS(*flTLSCertFile, *flTLSPrivateKeyFile))
+		go serverPublicTokenEndpoint.ListenAndServeTLS(*flTLSCertFile, *flTLSPrivateKeyFile)
+		glog.Fatal(serverForApiServer.ListenAndServeTLS(*flAuthNTLSCertFile, *flAuthNTLSPrivateKeyFile))
 	} else {
-		glog.Fatal(server.ListenAndServe())
+		go serverPublicTokenEndpoint.ListenAndServe()
+		glog.Fatal(serverForApiServer.ListenAndServeTLS(*flAuthNTLSCertFile, *flAuthNTLSPrivateKeyFile))
 	}
 
 }
