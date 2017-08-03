@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/apprenda-kismatic/kubernetes-ldap/token"
+	"gitlab.informatik.haw-hamburg.de/icc/kubernetes-ldap/token"
 	"github.com/golang/glog"
 )
 

@@ -3,8 +3,8 @@ package auth
 import (
 	"net/http"
 
-	"github.com/apprenda-kismatic/kubernetes-ldap/ldap"
-	"github.com/apprenda-kismatic/kubernetes-ldap/token"
+	"gitlab.informatik.haw-hamburg.de/icc/kubernetes-ldap/ldap"
+	"gitlab.informatik.haw-hamburg.de/icc/kubernetes-ldap/token"
 	goldap "github.com/go-ldap/ldap"
 	"github.com/golang/glog"
 )
