@@ -8,7 +8,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/apprenda-kismatic/kubernetes-ldap/token"
+	"gitlab.informatik.haw-hamburg.de/icc/kubernetes-ldap/token"
 )
 
 type dummyVerifier struct {

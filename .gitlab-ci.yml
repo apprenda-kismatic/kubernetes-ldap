@@ -1,0 +1,67 @@
+stages:
+  - build
+  - test
+  - dockerize
+
+variables:
+  DOCKER_HOST: "tcp://localhost:2375"
+  DOCKER_REGISTRY: "nexus.informatik.haw-hamburg.de"
+  SERVICE_NAME: "icc-k8s-ldap"
+cache:
+  paths:
+    - vendor
+
+before_script:
+  - git config --global http.sslVerify true
+  - mkdir -p $GOPATH/src/gitlab.informatik.haw-hamburg.de/icc/kubernetes-ldap/
+  - mv ./* $GOPATH/src/gitlab.informatik.haw-hamburg.de/icc/kubernetes-ldap/
+  - mkdir /tools
+  - cd /tools
+  - wget https://github.com/Masterminds/glide/releases/download/v0.12.3/glide-v0.12.3-linux-amd64.tar.gz
+  - tar -zxvf glide-v0.12.3-linux-amd64.tar.gz
+  - mv linux-amd64/ glide/
+  - PATH=/tools/glide:$PATH/
+  - cd $GOPATH/src/gitlab.informatik.haw-hamburg.de/icc/kubernetes-ldap/
+
+buildAndTest:
+  stage: test
+  tags:
+   - k8s
+  only:
+   - icc
+  image: nexus.informatik.haw-hamburg.de/golang:1.8.3
+  variables:
+    CGO_ENABLED: "0"
+    GOOS: "linux"
+  script:
+    - glide install
+    - go test gitlab.informatik.haw-hamburg.de/icc/kubernetes-ldap/$(glide novendor)
+    - go build -a -installsuffix cgo gitlab.informatik.haw-hamburg.de/icc/kubernetes-ldap
+    - mv ./kubernetes-ldap /$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME/icc-k8s-ldap
+  artifacts:
+    paths:
+    - ./icc-k8s-ldap
+
+
+deploy:
+  stage: dockerize
+  tags:
+   - k8s
+  only:
+   - icc
+  image: nexus.informatik.haw-hamburg.de/docker:stable-dind
+  services:
+    - nexus.informatik.haw-hamburg.de/docker:stable-dind
+  before_script:
+    - echo "before_script overriden"
+  dependencies:
+    - buildAndTest
+  script:
+    - docker build -t $SERVICE_NAME:latest .
+    - docker tag $SERVICE_NAME:latest $DOCKER_REGISTRY/$SERVICE_NAME:$CI_PIPELINE_ID
+    - docker tag $SERVICE_NAME:latest $DOCKER_REGISTRY/$SERVICE_NAME:latest
+    - docker tag $SERVICE_NAME:latest $DOCKER_REGISTRY/$SERVICE_NAME:$CI_COMMIT_SHA
+    - docker login -u $NEXUS_USER -p $NEXUS_PW $DOCKER_REGISTRY
+    - docker push $DOCKER_REGISTRY/$SERVICE_NAME:$CI_PIPELINE_ID
+    - docker push $DOCKER_REGISTRY/$SERVICE_NAME:latest
+    - docker push $DOCKER_REGISTRY/$SERVICE_NAME:$CI_COMMIT_SHA

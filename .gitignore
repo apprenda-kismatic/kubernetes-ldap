@@ -38,3 +38,8 @@ Session.vim
 
 # Glade will recreate this, so don't need in source control
 vendor/
+\.idea/
+
+signing\.priv
+
+signing\.pub

@@ -1,4 +1,4 @@
-package main
+package kubernetesldapmain
 
 import (
 	"crypto/tls"
@@ -7,9 +7,9 @@ import (
 	"os"
 
 	"github.com/golang/glog"
-	"github.com/apprenda-kismatic/kubernetes-ldap/auth"
-	"github.com/apprenda-kismatic/kubernetes-ldap/ldap"
-	"github.com/apprenda-kismatic/kubernetes-ldap/token"
+	"gitlab.informatik.haw-hamburg.de/icc/kubernetes-ldap/auth"
+	"gitlab.informatik.haw-hamburg.de/icc/kubernetes-ldap/ldap"
+	"gitlab.informatik.haw-hamburg.de/icc/kubernetes-ldap/token"
 
 	goflag "flag"
 
@@ -29,10 +29,14 @@ var flSearchUserDN = flag.String("ldap-search-user-dn", "", "Search user DN for 
 var flSearchUserPassword = flag.String("ldap-search-user-password", "", "Search user password")
 var flSkipLdapTLSVerification = flag.Bool("ldap-skip-tls-verification", false, "Skip LDAP server TLS verification")
 
-var flServerPort = flag.Uint("port", 4000, "Local port this proxy server will run on")
-var flTLSCertFile = flag.String("tls-cert-file", "",
-	"File containing x509 Certificate for HTTPS.  (CA cert, if any, concatenated after server cert).")
-var flTLSPrivateKeyFile = flag.String("tls-private-key-file", "", "File containing x509 private key matching --tls-cert-file.")
+var flServerPort = flag.Uint("port", 8080, "Local port this proxy server will run on")
+var flAuthNServerPort = flag.Uint("authn-port", 8443, "Local port this server will run on for AuthN endpoint")
+var flHostTLS = flag.Bool("host-tls", false, "Set to true if you want to host via HTTPS, --tls-cert-file and --tls-private-key-file will be required then.")
+var flTLSCertFile = flag.String("tls-cert-file", "","File containing x509 Certificate for HTTPS.  (CA cert, if any, concatenated after server cert). Requires --host-tls set to true to have an effect!")
+var flTLSPrivateKeyFile = flag.String("tls-private-key-file", "", "File containing x509 private key matching --tls-cert-file. Requires --host-tls set to true to have an effect!")
+
+var flAuthNTLSCertFile = flag.String("authn-tls-cert-file", "","File containing x509 Certificate for AuthN in-cluster HTTPS.  (CA cert, if any, concatenated after server cert).")
+var flAuthNTLSPrivateKeyFile = flag.String("authn-tls-private-key-file", "", "File containing x509 private key matching --authn-tls-cert-file. ")
 
 func init() {
 	flag.Usage = func() {
@@ -41,15 +45,20 @@ func init() {
 	}
 }
 
-func main() {
+func Main() {
 	flag.CommandLine.AddGoFlagSet(goflag.CommandLine) // support glog flags
 	flag.Parse()
 
 	// validate required flags
 	requireFlag("--ldap-host", flLdapHost)
 	requireFlag("--ldap-base-dn", flBaseDN)
-	requireFlag("--tls-cert-file", flTLSCertFile)
-	requireFlag("--tls-private-key", flTLSPrivateKeyFile)
+	requireFlag("--authn-tls-cert-file", flAuthNTLSCertFile)
+	requireFlag("--authn-tls-private-key-file", flAuthNTLSPrivateKeyFile)
+
+	if *flHostTLS {
+		requireFlag("--tls-cert-file", flTLSCertFile)
+		requireFlag("--tls-private-key", flTLSPrivateKeyFile)
+	}
 
 	glog.CopyStandardLogTo("INFO")
 
@@ -74,6 +83,7 @@ func main() {
 		InsecureSkipVerify: *flSkipLdapTLSVerification,
 	}
 
+
 	ldapClient := &ldap.Client{
 		BaseDN:             *flBaseDN,
 		LdapServer:         *flLdapHost,
@@ -85,8 +95,6 @@ func main() {
 		TLSConfig:          ldapTLSConfig,
 	}
 
-	server := &http.Server{Addr: fmt.Sprintf(":%d", *flServerPort)}
-
 	webhook := auth.NewTokenWebhook(tokenVerifier)
 
 	ldapTokenIssuer := &auth.LDAPTokenIssuer{
@@ -95,19 +103,50 @@ func main() {
 	}
 
 	// Endpoint for authenticating with token
-	http.Handle("/authenticate", webhook)
+	routerForApiServer := http.NewServeMux()
+	routerForApiServer.Handle("/authenticate", webhook)
+
 
 	// Endpoint for token issuance after LDAP auth
-	http.Handle("/ldapAuth", ldapTokenIssuer)
+	routerPublicTokenEndpoint := http.NewServeMux()
+	routerPublicTokenEndpoint.Handle("/ldapAuth", ldapTokenIssuer)
+
+	// Endpoint for liveness probe
+	routerPublicTokenEndpoint.HandleFunc("/healthz", healthz)
 
 	glog.Infof("Serving on %s", fmt.Sprintf(":%d", *flServerPort))
 
-	server.TLSConfig = &tls.Config{
+	tlsCfg := &tls.Config{
 		// Change default from SSLv3 to TLSv1.0 (because of POODLE vulnerability)
 		MinVersion: tls.VersionTLS10,
 	}
-	glog.Fatal(server.ListenAndServeTLS(*flTLSCertFile, *flTLSPrivateKeyFile))
 
+	serverPublicTokenEndpoint := &http.Server{
+		Addr: fmt.Sprintf(":%d", *flServerPort),
+		Handler: routerPublicTokenEndpoint,
+		TLSConfig: tlsCfg,
+	}
+
+	serverForApiServer := &http.Server{
+		Addr: fmt.Sprintf(":%d", *flAuthNServerPort),
+		Handler: routerForApiServer,
+		TLSConfig: tlsCfg,
+	}
+
+
+	if *flHostTLS {
+		go serverPublicTokenEndpoint.ListenAndServeTLS(*flTLSCertFile, *flTLSPrivateKeyFile)
+		glog.Fatal(serverForApiServer.ListenAndServeTLS(*flAuthNTLSCertFile, *flAuthNTLSPrivateKeyFile))
+	} else {
+		go serverPublicTokenEndpoint.ListenAndServe()
+		glog.Fatal(serverForApiServer.ListenAndServeTLS(*flAuthNTLSCertFile, *flAuthNTLSPrivateKeyFile))
+	}
+
+}
+
+func healthz(w http.ResponseWriter, r *http.Request){
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("ok"))
 }
 
 func requireFlag(flagName string, flagValue *string) {
