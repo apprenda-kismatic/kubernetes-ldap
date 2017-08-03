@@ -112,7 +112,7 @@ func Main() {
 	routerPublicTokenEndpoint.Handle("/ldapAuth", ldapTokenIssuer)
 
 	// Endpoint for liveness probe
-	http.HandleFunc("/healthz", healthz)
+	routerPublicTokenEndpoint.HandleFunc("/healthz", healthz)
 
 	glog.Infof("Serving on %s", fmt.Sprintf(":%d", *flServerPort))
 
