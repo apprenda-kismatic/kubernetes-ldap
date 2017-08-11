@@ -90,8 +90,9 @@ func TestTokenIssuer(t *testing.T) {
 }
 
 func TestCreateToken(t *testing.T) {
+	uid := "john.doe"
 	e := &ldap.Entry{
-		DN: "some-dn",
+		DN: "uid=john.doe,ou=People,dc=example,dc=com",
 	}
 	lti := &LDAPTokenIssuer{
 		LDAPServer: "some-ldap-server",
@@ -101,8 +102,8 @@ func TestCreateToken(t *testing.T) {
 		"userDN":     e.DN,
 	}
 
-	tok := lti.createToken(e)
-	if tok.Username != e.DN {
+	tok := lti.createToken(e, uid)
+	if tok.Username != uid {
 		t.Errorf("Unexpected username in token. Expected: '%s'. Got: '%s'.", e.DN, tok.Username)
 	}
 

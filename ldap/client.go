@@ -94,7 +94,6 @@ func (c *Client) dial() (*ldap.Conn, error) {
 }
 
 func (c *Client) newUserSearchRequest(username string) *ldap.SearchRequest {
-	// TODO(abrand): sanitize
 	userFilter := fmt.Sprintf("(%s=%s)", c.UserLoginAttribute, username)
 	return &ldap.SearchRequest{
 		BaseDN:       c.BaseDN,

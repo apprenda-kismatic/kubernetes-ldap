@@ -34,7 +34,7 @@ func (lti *LDAPTokenIssuer) ServeHTTP(resp http.ResponseWriter, req *http.Reques
 	}
 
 	// Auth was successful, create token
-	token := lti.createToken(ldapEntry)
+	token := lti.createToken(ldapEntry, user)
 
 	// Sign token and return
 	signedToken, err := lti.TokenSigner.Sign(token)
@@ -48,9 +48,9 @@ func (lti *LDAPTokenIssuer) ServeHTTP(resp http.ResponseWriter, req *http.Reques
 	resp.Write([]byte(signedToken))
 }
 
-func (lti *LDAPTokenIssuer) createToken(ldapEntry *goldap.Entry) *token.AuthToken {
+func (lti *LDAPTokenIssuer) createToken(ldapEntry *goldap.Entry, user string) *token.AuthToken {
 	return &token.AuthToken{
-		Username: ldapEntry.DN,
+		Username: user,
 		Assertions: map[string]string{
 			"ldapServer": lti.LDAPServer,
 			"userDN":     ldapEntry.DN,
