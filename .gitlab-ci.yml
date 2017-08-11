@@ -25,10 +25,6 @@ before_script:
 
 buildAndTest:
   stage: test
-  tags:
-   - k8s
-  only:
-   - icc
   image: nexus.informatik.haw-hamburg.de/golang:1.8.3
   variables:
     CGO_ENABLED: "0"
@@ -45,10 +41,6 @@ buildAndTest:
 
 deploy:
   stage: dockerize
-  tags:
-   - k8s
-  only:
-   - icc
   image: nexus.informatik.haw-hamburg.de/docker:stable-dind
   services:
     - nexus.informatik.haw-hamburg.de/docker:stable-dind
