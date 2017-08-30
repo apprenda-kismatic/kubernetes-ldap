@@ -1,12 +1,12 @@
 package token
 
 import (
-	"crypto/ecdsa"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 
-	"github.com/square/go-jose"
+	"gopkg.in/square/go-jose.v2"
+	"crypto/rsa"
 )
 
 // Verifier verifies the serialized representation of a token
@@ -16,8 +16,8 @@ type Verifier interface {
 }
 
 // EcdsaVerifier represents an object that can verify tokens.
-type ecdsaVerifier struct {
-	publicKey *ecdsa.PublicKey
+type rsaVerifier struct {
+	publicKey *rsa.PublicKey
 }
 
 // NewVerifier reads a verification key file, and returns a verifier
@@ -27,23 +27,23 @@ func  NewVerifier(basename string) (Verifier, error) {
 	if err != nil {
 		return nil, err
 	}
-	pubKey, err := jose.LoadPublicKey(buf)
+	pubKey, err := LoadPublicKey(buf)
 	if err != nil {
 		return nil, err
 	}
-	ecdsaPubKey, ok := pubKey.(*ecdsa.PublicKey)
+	rsaPublicKey, ok := pubKey.(*rsa.PublicKey)
 	if !ok {
 		return nil, fmt.Errorf("Expected the public key to use ECDSA, but got a key of type %T", pubKey)
 	}
-	v := &ecdsaVerifier{
-		publicKey: ecdsaPubKey,
+	v := &rsaVerifier{
+		publicKey: rsaPublicKey,
 	}
 	return v, nil
 }
 
 // Verify checks that a token's signature is valid, and returns the
 // token. Otherwise returns an error.
-func (ev *ecdsaVerifier) Verify(s string) (token *AuthToken, err error) {
+func (ev *rsaVerifier) Verify(s string) (token *AuthToken, err error) {
 	jws, err := jose.ParseSigned(s)
 	if err != nil {
 		return

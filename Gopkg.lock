@@ -8,9 +8,10 @@
   version = "v2.5.0"
 
 [[projects]]
+  branch = "master"
   name = "github.com/golang/glog"
   packages = ["."]
-  revision = "65d674618f712aa808a7d0104131b9206fc3d5ad"
+  revision = "23def4e6c14b4da8ac2ed8007337bc5eb5007998"
 
 [[projects]]
   name = "github.com/spf13/pflag"
@@ -21,24 +22,24 @@
 [[projects]]
   name = "github.com/square/go-jose"
   packages = ["."]
-  revision = "b25e6cab129e4a54675b42ea49d38e9c33ade9e6"
-  version = "v2.1.2"
+  revision = "af13e1fbc7ac2df7f7eab54e5177104d546d0e9c"
+  version = "v2.1.1"
 
 [[projects]]
   name = "gopkg.in/asn1-ber.v1"
   packages = ["."]
-  revision = "9eae18c3681ae3d3c677ac2b80a8fe57de45fc09"
-  version = "v1"
+  revision = "379148ca0225df7a432012b8df0355c2a2063ac0"
+  version = "v1.2"
 
 [[projects]]
   name = "gopkg.in/square/go-jose.v2"
-  packages = ["cipher","json"]
-  revision = "af13e1fbc7ac2df7f7eab54e5177104d546d0e9c"
-  version = "v2.1.1"
+  packages = [".","cipher","json"]
+  revision = "b25e6cab129e4a54675b42ea49d38e9c33ade9e6"
+  version = "v2.1.2"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "882f4a4e70dcc6e06fa86f4fc5ff821043c4d8076baa5a871310c279947321ca"
+  inputs-digest = "c7906cb3da7872906b04a25a1a48bcfdc9f24a6fb6b5cfce7f640c91b91498b4"
   solver-name = "gps-cdcl"
   solver-version = 1
