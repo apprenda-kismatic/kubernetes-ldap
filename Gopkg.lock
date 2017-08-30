@@ -4,14 +4,13 @@
 [[projects]]
   name = "github.com/go-ldap/ldap"
   packages = ["."]
-  revision = "8168ee085ee43257585e50c6441aadf54ecb2c9f"
-  version = "v2.5.0"
+  revision = "d0a5ced67b4dc310b9158d63a2c6f9c5ec13f105"
+  version = "v2.4.1"
 
 [[projects]]
-  branch = "master"
   name = "github.com/golang/glog"
   packages = ["."]
-  revision = "23def4e6c14b4da8ac2ed8007337bc5eb5007998"
+  revision = "65d674618f712aa808a7d0104131b9206fc3d5ad"
 
 [[projects]]
   name = "github.com/spf13/pflag"
@@ -20,16 +19,16 @@
   version = "v1.0.0"
 
 [[projects]]
-  name = "github.com/square/go-jose"
-  packages = ["."]
-  revision = "af13e1fbc7ac2df7f7eab54e5177104d546d0e9c"
-  version = "v2.1.1"
-
-[[projects]]
   name = "gopkg.in/asn1-ber.v1"
   packages = ["."]
   revision = "379148ca0225df7a432012b8df0355c2a2063ac0"
   version = "v1.2"
+
+[[projects]]
+  name = "gopkg.in/ldap.v2"
+  packages = ["."]
+  revision = "8168ee085ee43257585e50c6441aadf54ecb2c9f"
+  version = "v2.5.0"
 
 [[projects]]
   name = "gopkg.in/square/go-jose.v2"
@@ -40,6 +39,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "c7906cb3da7872906b04a25a1a48bcfdc9f24a6fb6b5cfce7f640c91b91498b4"
+  inputs-digest = "99e49e8317c1baf0057da3b1547f442d79e2785e81724bc83105fb223e9872dc"
   solver-name = "gps-cdcl"
   solver-version = 1

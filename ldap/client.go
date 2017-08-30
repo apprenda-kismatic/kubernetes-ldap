@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/go-ldap/ldap"
+	"gopkg.in/ldap.v2"
 )
 
 // Authenticator authenticates a user against an LDAP directory

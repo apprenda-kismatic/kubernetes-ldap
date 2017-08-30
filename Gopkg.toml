@@ -1,6 +1,7 @@
 [[constraint]]
-  name = "github.com/go-ldap/ldap"
-  version = "2.5.0"
+  name = "gopkg.in/ldap.v2"
+  #version = "2.5.0"
+  #revision = "81498f9194233d3bce29b7ce4a3d92900f0d635c"
 
 [[constraint]]
   name = "github.com/golang/glog"
