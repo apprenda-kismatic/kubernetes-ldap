@@ -65,7 +65,10 @@ func (ev *rsaVerifier) Verify(s string) (token *AuthToken, err error) {
 
 	// check exp field
 
-	if time.Now().Before(token.Exp) {
+	now := time.Now()
+	fmt.Println(now)
+	fmt.Println(token.Exp)
+	if token.Exp.Before(time.Now()) {
 		return nil, errors.New("Token expired")
 	}
 
