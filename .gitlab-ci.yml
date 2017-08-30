@@ -15,13 +15,8 @@ before_script:
   - git config --global http.sslVerify true
   - mkdir -p $GOPATH/src/gitlab.informatik.haw-hamburg.de/icc/kubernetes-ldap/
   - mv ./* $GOPATH/src/gitlab.informatik.haw-hamburg.de/icc/kubernetes-ldap/
-  - mkdir /tools
-  - cd /tools
-  - wget https://github.com/Masterminds/glide/releases/download/v0.12.3/glide-v0.12.3-linux-amd64.tar.gz
-  - tar -zxvf glide-v0.12.3-linux-amd64.tar.gz
-  - mv linux-amd64/ glide/
-  - PATH=/tools/glide:$PATH/
   - cd $GOPATH/src/gitlab.informatik.haw-hamburg.de/icc/kubernetes-ldap/
+  - go get -u github.com/golang/dep/cmd/dep
 
 buildAndTest:
   stage: test
@@ -30,8 +25,8 @@ buildAndTest:
     CGO_ENABLED: "0"
     GOOS: "linux"
   script:
-    - glide install
-    - go test gitlab.informatik.haw-hamburg.de/icc/kubernetes-ldap/$(glide novendor)
+    - dep ensure -v
+    - go test gitlab.informatik.haw-hamburg.de/icc/kubernetes-ldap/
     - go build -a -installsuffix cgo gitlab.informatik.haw-hamburg.de/icc/kubernetes-ldap
     - mv ./kubernetes-ldap /$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME/icc-k8s-ldap
   artifacts:
