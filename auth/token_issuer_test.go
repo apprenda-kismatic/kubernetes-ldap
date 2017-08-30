@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"gitlab.informatik.haw-hamburg.de/icc/kubernetes-ldap/token"
-	"github.com/go-ldap/ldap"
+	"gopkg.in/ldap.v2"
 )
 
 type dummyLDAP struct {
