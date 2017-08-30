@@ -43,11 +43,12 @@ func NewSigner(filename string) (Signer, error) {
 	if err != nil {
 		return nil, err
 	}
-	ecdsaSigner := &rsaSigner{
+
+	rsaSigner := &rsaSigner{
 		signer: signer,
 	}
-	ecdsaSigner.publicKey = &rsaKey.PublicKey
-	return ecdsaSigner, nil
+	rsaSigner.publicKey = &rsaKey.PublicKey
+	return rsaSigner, nil
 }
 
 // Sign an authentcation token and return the serialized JWS

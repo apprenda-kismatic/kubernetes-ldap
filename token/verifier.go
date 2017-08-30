@@ -7,6 +7,8 @@ import (
 
 	"gopkg.in/square/go-jose.v2"
 	"crypto/rsa"
+	"time"
+	"errors"
 )
 
 // Verifier verifies the serialized representation of a token
@@ -48,15 +50,24 @@ func (ev *rsaVerifier) Verify(s string) (token *AuthToken, err error) {
 	if err != nil {
 		return
 	}
+
 	payload, err := jws.Verify(ev.publicKey)
 	if err != nil {
 		return
 	}
+
 	token = &AuthToken{}
 	err = json.Unmarshal(payload, token)
 	if err != nil {
 		token = nil
 		return
 	}
+
+	// check exp field
+
+	if time.Now().Before(token.Exp) {
+		return nil, errors.New("Token expired")
+	}
+
 	return
 }

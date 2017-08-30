@@ -1,23 +1,20 @@
 package token
 
 import (
-	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/x509"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"crypto/rsa"
+	"time"
 )
 
-const (
-	curveName = "P-256"    // curveName is the name of the ECDSA curve
-)
 
-var curveEll = elliptic.P256()
 
 // AuthToken contains information about the authenticated user
 type AuthToken struct {
+	Exp		   time.Time `json:"exp"`
 	Username   string
 	Assertions map[string]string
 }

@@ -7,6 +7,7 @@ import (
 	"gitlab.informatik.haw-hamburg.de/icc/kubernetes-ldap/token"
 	goldap "github.com/go-ldap/ldap"
 	"github.com/golang/glog"
+	"time"
 )
 
 // LDAPTokenIssuer issues cryptographically secure tokens after authenticating the
@@ -51,6 +52,7 @@ func (lti *LDAPTokenIssuer) ServeHTTP(resp http.ResponseWriter, req *http.Reques
 func (lti *LDAPTokenIssuer) createToken(ldapEntry *goldap.Entry, user string) *token.AuthToken {
 	return &token.AuthToken{
 		Username: user,
+		Exp: time.Now().Add(time.Hour * time.Duration(12)),
 		Assertions: map[string]string{
 			"ldapServer": lti.LDAPServer,
 			"userDN":     ldapEntry.DN,
