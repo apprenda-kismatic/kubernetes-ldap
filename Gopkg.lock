@@ -2,12 +2,6 @@
 
 
 [[projects]]
-  name = "github.com/go-ldap/ldap"
-  packages = ["."]
-  revision = "d0a5ced67b4dc310b9158d63a2c6f9c5ec13f105"
-  version = "v2.4.1"
-
-[[projects]]
   name = "github.com/golang/glog"
   packages = ["."]
   revision = "65d674618f712aa808a7d0104131b9206fc3d5ad"
@@ -39,6 +33,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "99e49e8317c1baf0057da3b1547f442d79e2785e81724bc83105fb223e9872dc"
+  inputs-digest = "2fb1681eab8135d70ce2d220004758d255105e6ea53fa2652d5f97075a431025"
   solver-name = "gps-cdcl"
   solver-version = 1

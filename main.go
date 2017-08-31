@@ -1,7 +1,7 @@
 package main
 
 import (
-	"gitlab.informatik.haw-hamburg.de/icc/kubernetes-ldap/kubernetesldapmain"
+	"github.com/apprenda-kismatic/kubernetes-ldap/kubernetesldapmain"
 )
 
 

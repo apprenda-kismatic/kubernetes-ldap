@@ -8,9 +8,14 @@ Lightweight Directory Access Protocol (LDAP) for Kubernetes™
 Getting Started
 ===============
 This project provides an LDAP authentication webhook for Kubernetes. 
-The current implementation exposes two endpoints:
-- /authenticate: Handles token authentication requests coming from Kubernetes
-- /ldapAuth: Issues token to be used when interacting with the Kubernetes API
+This version is meant to run inside your K8s Cluster, which is why it exposes two endpoints:
+- <b>/authenticate</b>: Handles token authentication requests coming from Kubernetes API Server. Served via SSL on Port 8443.
+- <b>/ldapAuth</b>: Issues token to be used when interacting with the Kubernetes API. Served w/out SSL on Port 8080 as it's meant
+to be exposed via Ingress to the outside. 
+
+The service will issue RSASSA-PSS (SHA512) signed tokens with a length of 4096 bits. The tokens have an expiry date of 12h
+after which they will be invalidated by the server.
+
 
 Pre-requisites
 --------------
@@ -22,31 +27,151 @@ Starting the webhook server
 Run the following to start the server
 ```
 kubernetes-ldap --ldap-host ldap.example.com \
+    --ldap-port 636
     --ldap-base-dn "DC=example,DC=com" \
-    --tls-cert-file pathToCert \
-    --tls-private-key-file pathToKey \
+    --tls-cert-file pathToCert (optional)\
+    --tls-private-key-file pathToKey (optional)\
     --ldap-user-attribute userPrincipalName \
     --ldap-search-user-dn "OU=engineering,DC=example,DC=com" (optional) \
-    --ldap-search-user-password pwd (optional)
+    --ldap-search-user-password pwd (optional) \
+    --authn-tls-cert-file pathToCert \
+    --authn-tls-private-key-file pathToKey
+    
+```
+
+Deploying the Kubernetes LDAP Service
+----------------------------------
+Deploy the service into the kube-system namespace of your cluster:
+```yaml
+kind: Deployment
+apiVersion: extensions/v1beta1
+metadata:
+  name: k8s-ldap
+  namespace: kube-system
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        service: k8s-ldap
+    spec:
+      volumes:
+        - name: authn-tls-secret
+          secret:
+            secretName: kubernetes-ldap-server-my-awesome-company
+      containers:
+      - name: icc-k8s-ldap
+        image: <REGISTRY>/<IMAGE_NAME>:<TAG>
+        args: ["--ldap-host", "ldap.example.com",
+               "--ldap-port", "636",
+               "--ldap-base-dn", "DC=example,DC=com",
+               "--ldap-user-attribute", "userPrincipalName",
+               "--ldap-search-user-dn", "$(SECRET_LDAP_USERNAME)",
+               "--ldap-search-user-password", "$(SECRET_LDAP_PASSWORD)",
+               "--authn-tls-cert-file", "/etc/kubernetes/ssl/tls.crt",
+               "--authn-tls-private-key-file", "/etc/kubernetes/ssl/tls.key"]
+        ports:
+        - containerPort: 8080
+        - containerPort: 8443
+        resources:
+          limits:
+            cpu: 100m
+            memory: 150Mi
+          requests:
+            cpu: 50m
+            memory: 90Mi
+        env:
+        - name: SECRET_LDAP_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: k8s-ldap-credentials
+              key: username
+        - name: SECRET_LDAP_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: k8s-ldap-credentials
+              key: password
+        volumeMounts:
+          - name: authn-tls-secret
+            mountPath: /etc/kubernetes/ssl
+            readOnly: true
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 10
+
+```
+And add a Service with a static cluster IP set:
+```yaml
+kind: Service
+apiVersion: v1
+metadata:
+  name:  k8s-ldap
+  namespace: kube-system
+  labels:
+    service:  k8s-ldap
+spec:
+  ports:
+  -   name: http
+      protocol: TCP
+      port: 80
+      targetPort: 8080
+  -   name: https
+      protocol: TCP
+      port: 8443
+      targetPort: 8443
+  selector:
+    service:  k8s-ldap
+  clusterIP: 10.32.0.15
+ 
+```
+Finally expose the service's public endpoint to the world via Ingress (assumes nginx ingress):
+```yaml
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+  name: kube-system-ingress
+  namespace: kube-system
+spec:
+  tls:
+  - hosts:
+    - k8s-login.my-awesome-company.com
+    secretName: k8s-login-my-awesome-company-com
+  backend:
+        serviceName: icc-k8s-ldap
+        servicePort: http
+  rules:
+  - host: k8s-login.my-awesome-company.com
+    http:
+      paths:
+      - path: /ldapAuth
+        backend:
+            serviceName: k8s-ldap
+            servicePort: http
 ```
 
 Configuring the Kubernetes Webhook
 ----------------------------------
 Create a yaml file to define the webhook:
-```
+```yaml
+# Docs here: https://kubernetes.io/docs/admin/authentication/#webhook-token-authentication
 # clusters refers to the remote service.
 clusters:
   - name: ldap-auth-webhook
     cluster:
-      certificate-authority: ~/ldap.example.com.cert      # CA for verifying the remote service.
-      server: https://ldap-webhook:4000/authenticate # URL of remote service to query. Must use 'https'.
+      certificate-authority: /etc/kubernetes/ssl/ca.pem      # Cluster Root CA 
+      server: https://10.32.0.15:8443/authenticate # URL of remote service to query. Must use 'https'. Set to static service IP
 
 # users refers to the API Server's webhook configuration.
 users:
   - name: ldap-auth-webhook-client
     user:
-      client-certificate: ~/k8s-webhook-client.cert # cert for the webhook plugin to use
-      client-key: ~/k8s-webhook-client.key          # key matching the cert
+      client-certificate: /etc/kubernetes/ssl/kubernetes-ldap-client.pem  # cert for the webhook plugin to use
+      client-key: /etc/kubernetes/ssl/kubernetes-ldap-client.key          # key matching the cert
 
 # kubeconfig files require a context. Provide one for the API Server.
 current-context: webhook
@@ -69,7 +194,7 @@ Once the webhook and API servers are running, we are ready to authenticate using
 
 1. Obtain an authentication token from the webhook server
 ```
-AUTH_TOKEN=$(curl https://ldap-webhook:4000/ldapAuth --user alice@example.com:password)
+AUTH_TOKEN=$(curl https://k8s-login.my-awesome-company.com/ldapAuth --user alice@example.com:password)
 ```
 2. Store the auth token in `kubectl`'s configuration
 ```
