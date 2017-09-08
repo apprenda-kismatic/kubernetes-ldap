@@ -24,7 +24,7 @@ var flLdapAllowInsecure = flag.Bool("ldap-insecure", false, "Disable LDAP TLS")
 var flLdapHost = flag.String("ldap-host", "", "Host or IP of the LDAP server")
 var flLdapPort = flag.Uint("ldap-port", 389, "LDAP server port")
 var flBaseDN = flag.String("ldap-base-dn", "", "LDAP user base DN in the form 'dc=example,dc=com'")
-var flGroup = flag.String("ldap-group", "", "Group a user must be member of")
+var flLdapOU = flag.String("ldap-ou", "", "LDAP group/organizational unit (ou) a user must be member of")
 var flUserLoginAttribute = flag.String("ldap-user-attribute", "uid", "LDAP Username attribute for login")
 var flSearchUserDN = flag.String("ldap-search-user-dn", "", "Search user DN for this app to find users (e.g.: cn=admin,dc=example,dc=com).")
 var flSearchUserPassword = flag.String("ldap-search-user-password", "", "Search user password")
@@ -88,12 +88,12 @@ func main() {
 
 	server := &http.Server{Addr: fmt.Sprintf(":%d", *flServerPort)}
 
-	webhook := auth.NewTokenWebhook(tokenVerifier)
+	webhook := auth.NewTokenWebhook(tokenVerifier, *flLdapOU)
 
 	ldapTokenIssuer := &auth.LDAPTokenIssuer{
 		LDAPAuthenticator: ldapClient,
 		TokenSigner:       tokenSigner,
-		RequiredGroup:     *flGroup,
+		LDAPOU:            *flLdapOU,
 	}
 
 	// Endpoint for authenticating with token

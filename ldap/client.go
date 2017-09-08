@@ -11,7 +11,7 @@ import (
 
 // Authenticator authenticates a user against an LDAP directory
 type Authenticator interface {
-	Authenticate(username, password, group string) (*ldap.Entry, error)
+	Authenticate(username, password, ldapOU string) (*ldap.Entry, error)
 }
 
 // Client represents a connection, and associated lookup strategy,
@@ -29,7 +29,7 @@ type Client struct {
 
 // Authenticate a user against the LDAP directory. Returns an LDAP entry if password
 // is valid, otherwise returns an error.
-func (c *Client) Authenticate(username, password, group string) (*ldap.Entry, error) {
+func (c *Client) Authenticate(username, password, ldapOU string) (*ldap.Entry, error) {
 	conn, err := c.dial()
 	if err != nil {
 		return nil, fmt.Errorf("Error opening LDAP connection: %v", err)
@@ -61,10 +61,10 @@ func (c *Client) Authenticate(username, password, group string) (*ldap.Entry, er
 		return nil, fmt.Errorf("Multiple entries found for the search filter '%s': %+v", req.Filter, res.Entries)
 	}
 
-	if group != "" {
-		err = c.isInGroup(conn, username, group)
+	if ldapOU != "" {
+		err = c.isInLdapOU(conn, username, ldapOU)
 		if err != nil {
-			return nil, fmt.Errorf("Group check failed: %s", err)
+			return nil, fmt.Errorf("Organizational unit check failed: %s", err)
 		}
 	}
 
@@ -114,7 +114,7 @@ func (c *Client) newUserSearchRequest(username string) *ldap.SearchRequest {
 	}
 }
 
-func (c *Client) isInGroup(conn *ldap.Conn, username, group string) error {
+func (c *Client) isInLdapOU(conn *ldap.Conn, username, ldapOU string) error {
 	req := &ldap.SearchRequest{
 		BaseDN: c.BaseDN,
 		Scope:  ldap.ScopeWholeSubtree,
@@ -129,10 +129,10 @@ func (c *Client) isInGroup(conn *ldap.Conn, username, group string) error {
 		return fmt.Errorf("Received an empty response")
 	}
 	for _, entry := range res.Entries {
-		if strings.Contains(entry.DN, "cn="+group) {
+		if strings.Contains(entry.DN, "cn="+ldapOU) {
 			return nil
 		}
 	}
 
-	return fmt.Errorf("%q is not a member of %q", username, group)
+	return fmt.Errorf("%q is not a member of %q", username, ldapOU)
 }

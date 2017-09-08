@@ -15,7 +15,7 @@ type LDAPTokenIssuer struct {
 	LDAPServer        string
 	LDAPAuthenticator ldap.Authenticator
 	TokenSigner       token.Signer
-	RequiredGroup     string
+	LDAPOU            string
 }
 
 func (lti *LDAPTokenIssuer) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
@@ -27,7 +27,7 @@ func (lti *LDAPTokenIssuer) ServeHTTP(resp http.ResponseWriter, req *http.Reques
 	}
 
 	// Authenticate the user via LDAP
-	ldapEntry, err := lti.LDAPAuthenticator.Authenticate(user, password, lti.RequiredGroup)
+	ldapEntry, err := lti.LDAPAuthenticator.Authenticate(user, password, lti.LDAPOU)
 	if err != nil {
 		glog.Errorf("Error authenticating user: %v", err)
 		resp.WriteHeader(http.StatusUnauthorized)
