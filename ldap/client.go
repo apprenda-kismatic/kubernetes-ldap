@@ -4,13 +4,14 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/go-ldap/ldap"
 )
 
 // Authenticator authenticates a user against an LDAP directory
 type Authenticator interface {
-	Authenticate(username, password string) (*ldap.Entry, error)
+	Authenticate(username, password, ldapOU string) (*ldap.Entry, error)
 }
 
 // Client represents a connection, and associated lookup strategy,
@@ -28,7 +29,7 @@ type Client struct {
 
 // Authenticate a user against the LDAP directory. Returns an LDAP entry if password
 // is valid, otherwise returns an error.
-func (c *Client) Authenticate(username, password string) (*ldap.Entry, error) {
+func (c *Client) Authenticate(username, password, ldapOU string) (*ldap.Entry, error) {
 	conn, err := c.dial()
 	if err != nil {
 		return nil, fmt.Errorf("Error opening LDAP connection: %v", err)
@@ -58,6 +59,13 @@ func (c *Client) Authenticate(username, password string) (*ldap.Entry, error) {
 		return nil, fmt.Errorf("No result for the search filter '%s'", req.Filter)
 	case len(res.Entries) > 1:
 		return nil, fmt.Errorf("Multiple entries found for the search filter '%s': %+v", req.Filter, res.Entries)
+	}
+
+	if ldapOU != "" {
+		err = c.isInLdapOU(conn, username, ldapOU)
+		if err != nil {
+			return nil, fmt.Errorf("Organizational unit check failed: %s", err)
+		}
 	}
 
 	// Now that we know the user exists within the BaseDN scope
@@ -104,4 +112,27 @@ func (c *Client) newUserSearchRequest(username string) *ldap.SearchRequest {
 		TypesOnly:    false,
 		Filter:       userFilter,
 	}
+}
+
+func (c *Client) isInLdapOU(conn *ldap.Conn, username, ldapOU string) error {
+	req := &ldap.SearchRequest{
+		BaseDN: c.BaseDN,
+		Scope:  ldap.ScopeWholeSubtree,
+		Filter: fmt.Sprintf("(memberUid=%s)", username),
+	}
+
+	res, err := conn.Search(req)
+	if err != nil {
+		return fmt.Errorf("Error searching for user %s: %v", username, err)
+	}
+	if len(res.Entries) == 0 {
+		return fmt.Errorf("Received an empty response")
+	}
+	for _, entry := range res.Entries {
+		if strings.Contains(entry.DN, "cn="+ldapOU) {
+			return nil
+		}
+	}
+
+	return fmt.Errorf("%q is not a member of %q", username, ldapOU)
 }

@@ -11,12 +11,14 @@ import (
 // TokenWebhook responds to requests from the K8s authentication webhook
 type TokenWebhook struct {
 	tokenVerifier token.Verifier
+	ldapOU        string
 }
 
 // NewTokenWebhook returns a TokenWebhook with the given verifier
-func NewTokenWebhook(verifier token.Verifier) *TokenWebhook {
+func NewTokenWebhook(verifier token.Verifier, ldapOU string) *TokenWebhook {
 	return &TokenWebhook{
 		tokenVerifier: verifier,
+		ldapOU:        ldapOU,
 	}
 }
 
@@ -46,11 +48,15 @@ func (tw *TokenWebhook) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 	}
 
 	// Token is valid.
+	userInfo := UserInfo{
+		Username: token.Username,
+	}
+	if tw.ldapOU != "" {
+		userInfo.Groups = []string{tw.ldapOU}
+	}
 	trr.Status = TokenReviewStatus{
 		Authenticated: true,
-		User: UserInfo{
-			Username: token.Username,
-		},
+		User: userInfo,
 	}
 
 	respJSON, err := json.Marshal(trr)

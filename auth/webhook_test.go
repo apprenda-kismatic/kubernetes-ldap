@@ -54,7 +54,7 @@ func TestWebhook(t *testing.T) {
 
 	for i, c := range cases {
 		v := &dummyVerifier{token: c.verifiedToken, err: c.verifyErr}
-		tw := NewTokenWebhook(v)
+		tw := NewTokenWebhook(v, "")
 
 		trr := &TokenReviewRequest{
 			Spec: TokenReviewSpec{

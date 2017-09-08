@@ -16,7 +16,7 @@ type dummyLDAP struct {
 	err   error
 }
 
-func (d dummyLDAP) Authenticate(username, password string) (*ldap.Entry, error) {
+func (d dummyLDAP) Authenticate(username, password, ldapOU string) (*ldap.Entry, error) {
 	return d.entry, d.err
 }
 
