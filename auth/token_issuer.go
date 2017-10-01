@@ -7,6 +7,7 @@ import (
 	"github.com/apprenda-kismatic/kubernetes-ldap/token"
 	goldap "github.com/go-ldap/ldap"
 	"github.com/golang/glog"
+	"strings"
 )
 
 // LDAPTokenIssuer issues cryptographically secure tokens after authenticating the
@@ -48,9 +49,25 @@ func (lti *LDAPTokenIssuer) ServeHTTP(resp http.ResponseWriter, req *http.Reques
 	resp.Write([]byte(signedToken))
 }
 
+func (lti *LDAPTokenIssuer) getGroupsFromMembersOf(membersOf string) []string {
+	//memberOf: CN=Group1,CN=Users,DC=lab,DC=proofpoint,DC=com
+
+	var groupsOf []string
+
+	splitted_str := strings.Split(membersOf, ",")
+	for _, element := range splitted_str {
+		if strings.Contains(element, "CN=") {
+			groupsOf = append(groupsOf, strings.Replace(element, "CN=", "", 1))
+		}
+	}
+
+    return groupsOf
+}
+
 func (lti *LDAPTokenIssuer) createToken(ldapEntry *goldap.Entry) *token.AuthToken {
 	return &token.AuthToken{
-		Username: ldapEntry.DN,
+		Username: ldapEntry.GetAttributeValue("mail"),
+		Groups: lti.getGroupsFromMembersOf(ldapEntry.GetAttributeValue("memberOf")),
 		Assertions: map[string]string{
 			"ldapServer": lti.LDAPServer,
 			"userDN":     ldapEntry.DN,
