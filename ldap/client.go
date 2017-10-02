@@ -19,7 +19,7 @@ type Client struct {
 	BaseDN             string
 	LdapServer         string
 	LdapPort           uint
-	AllowInsecure      bool
+	UseInsecure        bool
 	UserLoginAttribute string
 	SearchUserDN       string
 	SearchUserPassword string
@@ -41,6 +41,7 @@ func (c *Client) Authenticate(username, password string) (*ldap.Entry, error) {
 	} else {
 		err = conn.Bind(username, password)
 	}
+
 	if err != nil {
 		return nil, fmt.Errorf("Error binding user to LDAP server: %v", err)
 	}
@@ -78,13 +79,15 @@ func (c *Client) Authenticate(username, password string) (*ldap.Entry, error) {
 func (c *Client) dial() (*ldap.Conn, error) {
 	address := fmt.Sprintf("%s:%d", c.LdapServer, c.LdapPort)
 
-	if c.TLSConfig != nil && !c.AllowInsecure {
+	if c.TLSConfig != nil && !c.UseInsecure {
+		fmt.Println("inside secure")
 		return ldap.DialTLS("tcp", address, c.TLSConfig)
 	}
 
 	// This will send passwords in clear text (LDAP doesn't obfuscate password in any way),
 	// thus we use a flag to enable this mode
-	if c.AllowInsecure {
+	if c.UseInsecure {
+		fmt.Println("inside insecure")
 		return ldap.Dial("tcp", address)
 	}
 
