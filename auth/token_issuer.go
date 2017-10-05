@@ -8,6 +8,7 @@ import (
 	goldap "github.com/go-ldap/ldap"
 	"github.com/golang/glog"
 	"strings"
+	"regexp"
 )
 
 // LDAPTokenIssuer issues cryptographically secure tokens after authenticating the
@@ -53,11 +54,13 @@ func (lti *LDAPTokenIssuer) getGroupsFromMembersOf(membersOf []string) []string 
 	groupsOf := []string {}
 	uniqueGroups := make(map[string]struct{})
 
+	re := regexp.MustCompile(`(?i)CN=`)
+
 	for _, memberOf := range membersOf {
 		splitted_str := strings.Split(memberOf, ",")
 		for _, element := range splitted_str {
-			if strings.Contains(element, "CN=") {
-				group := strings.Replace(element, "CN=", "", -1)
+			if strings.Contains(strings.ToUpper(element), "CN=") {
+				group := re.ReplaceAllString(element, "")
 
 				if _, ok := uniqueGroups[group]; !ok {
 					groupsOf = append(groupsOf, group)
