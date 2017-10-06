@@ -59,14 +59,19 @@ func (lti *LDAPTokenIssuer) getGroupsFromMembersOf(membersOf []string) []string 
 	for _, memberOf := range membersOf {
 		splitted_str := strings.Split(memberOf, ",")
 		for _, element := range splitted_str {
-			if strings.Contains(strings.ToUpper(element), "CN=") {
-				group := re.ReplaceAllString(element, "")
-
-				if _, ok := uniqueGroups[group]; !ok {
-					groupsOf = append(groupsOf, group)
-					uniqueGroups[group] = struct{}{}
-				}
+			if !strings.Contains(strings.ToUpper(element), "CN=") {
+				continue
 			}
+
+			group := re.ReplaceAllString(element, "")
+
+			if _, ok := uniqueGroups[group]; ok {
+				//this group has been considered and added already
+				continue
+			}
+
+			groupsOf = append(groupsOf, group)
+			uniqueGroups[group] = struct{}{}
 		}
 	}
 
