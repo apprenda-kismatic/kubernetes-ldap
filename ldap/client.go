@@ -19,7 +19,7 @@ type Client struct {
 	BaseDN             string
 	LdapServer         string
 	LdapPort           uint
-	AllowInsecure      bool
+	UseInsecure        bool
 	UserLoginAttribute string
 	SearchUserDN       string
 	SearchUserPassword string
@@ -41,6 +41,7 @@ func (c *Client) Authenticate(username, password string) (*ldap.Entry, error) {
 	} else {
 		err = conn.Bind(username, password)
 	}
+
 	if err != nil {
 		return nil, fmt.Errorf("Error binding user to LDAP server: %v", err)
 	}
@@ -59,7 +60,7 @@ func (c *Client) Authenticate(username, password string) (*ldap.Entry, error) {
 	case len(res.Entries) > 1:
 		return nil, fmt.Errorf("Multiple entries found for the search filter '%s': %+v", req.Filter, res.Entries)
 	}
-
+	
 	// Now that we know the user exists within the BaseDN scope
 	// let's do user bind to check credentials using the full DN instead of
 	// the attribute used for search
@@ -78,13 +79,13 @@ func (c *Client) Authenticate(username, password string) (*ldap.Entry, error) {
 func (c *Client) dial() (*ldap.Conn, error) {
 	address := fmt.Sprintf("%s:%d", c.LdapServer, c.LdapPort)
 
-	if c.TLSConfig != nil {
+	if c.TLSConfig != nil && !c.UseInsecure {
 		return ldap.DialTLS("tcp", address, c.TLSConfig)
 	}
 
 	// This will send passwords in clear text (LDAP doesn't obfuscate password in any way),
 	// thus we use a flag to enable this mode
-	if c.TLSConfig == nil && c.AllowInsecure {
+	if c.UseInsecure {
 		return ldap.Dial("tcp", address)
 	}
 

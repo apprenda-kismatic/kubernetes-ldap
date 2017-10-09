@@ -20,7 +20,7 @@ const (
 	usage = "kubernetes-ldap <options>"
 )
 
-var flLdapAllowInsecure = flag.Bool("ldap-insecure", false, "Disable LDAP TLS")
+var flLdapUseInsecure = flag.Bool("ldap-insecure", false, "Disable LDAP TLS")
 var flLdapHost = flag.String("ldap-host", "", "Host or IP of the LDAP server")
 var flLdapPort = flag.Uint("ldap-port", 389, "LDAP server port")
 var flBaseDN = flag.String("ldap-base-dn", "", "LDAP user base DN in the form 'dc=example,dc=com'")
@@ -78,7 +78,7 @@ func main() {
 		BaseDN:             *flBaseDN,
 		LdapServer:         *flLdapHost,
 		LdapPort:           *flLdapPort,
-		AllowInsecure:      *flLdapAllowInsecure,
+		UseInsecure:        *flLdapUseInsecure,
 		UserLoginAttribute: *flUserLoginAttribute,
 		SearchUserDN:       *flSearchUserDN,
 		SearchUserPassword: *flSearchUserPassword,

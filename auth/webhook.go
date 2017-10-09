@@ -50,6 +50,7 @@ func (tw *TokenWebhook) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 		Authenticated: true,
 		User: UserInfo{
 			Username: token.Username,
+			Groups: token.Groups,
 		},
 	}
 
