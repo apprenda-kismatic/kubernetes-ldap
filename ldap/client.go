@@ -20,6 +20,7 @@ type Client struct {
 	LdapServer         string
 	LdapPort           uint
 	AllowInsecure      bool
+	StartTLS           bool
 	UserLoginAttribute string
 	SearchUserDN       string
 	SearchUserPassword string
@@ -78,14 +79,37 @@ func (c *Client) Authenticate(username, password string) (*ldap.Entry, error) {
 func (c *Client) dial() (*ldap.Conn, error) {
 	address := fmt.Sprintf("%s:%d", c.LdapServer, c.LdapPort)
 
-	if c.TLSConfig != nil {
-		return ldap.DialTLS("tcp", address, c.TLSConfig)
-	}
-
 	// This will send passwords in clear text (LDAP doesn't obfuscate password in any way),
 	// thus we use a flag to enable this mode
-	if c.TLSConfig == nil && c.AllowInsecure {
-		return ldap.Dial("tcp", address)
+	if c.AllowInsecure {
+		l, err := ldap.Dial("tcp", address)
+		if err != nil {
+			return nil, fmt.Errorf("Error opening unencrypted connection: %v", err)
+		}
+		return l, err
+	}
+	if c.TLSConfig != nil {
+		// StartTLS
+		if c.StartTLS {
+			l, err := ldap.Dial("tcp", address)
+			if err != nil {
+				return nil, fmt.Errorf("Error beginning with an unencrypted connection (StartTLS): %v", err)
+			}
+
+			// Reconnect with TLS
+			err = l.StartTLS(c.TLSConfig)
+			if err != nil {
+				return nil, fmt.Errorf("Error switching to an encrypted connection (StartTLS): %v", err)
+			}
+			return l, err
+		} else {
+			// LDAPS
+			l, err := ldap.DialTLS("tcp", address, c.TLSConfig)
+			if err != nil {
+				return nil, fmt.Errorf("Error opening encrypted connection (LDAPS): %v", err)
+			}
+			return l, err
+		}
 	}
 
 	// TLSConfig was not specified, and insecure flag not set
