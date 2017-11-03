@@ -36,10 +36,17 @@ func (c *Client) Authenticate(username, password string) (*ldap.Entry, error) {
 	defer conn.Close()
 
 	// Bind user to perform the search
-	if c.SearchUserDN != "" && c.SearchUserPassword != "" {
-		err = conn.Bind(c.SearchUserDN, c.SearchUserPassword)
+	if c.SearchUserDN != "" {
+		if c.SearchUserPassword != "" {
+			// Authenticated bind
+			err = conn.Bind(c.SearchUserDN, c.SearchUserPassword)
+		} else {
+			// Unauthenticated bind (only username)
+			err = conn.UnauthenticatedBind(c.SearchUserDN)
+		}
 	} else {
-		err = conn.Bind(username, password)
+		// Anonymous bind
+		err = conn.UnauthenticatedBind("")
 	}
 	if err != nil {
 		return nil, fmt.Errorf("Error binding user to LDAP server: %v", err)
@@ -63,11 +70,9 @@ func (c *Client) Authenticate(username, password string) (*ldap.Entry, error) {
 	// Now that we know the user exists within the BaseDN scope
 	// let's do user bind to check credentials using the full DN instead of
 	// the attribute used for search
-	if c.SearchUserDN != "" && c.SearchUserPassword != "" {
-		err = conn.Bind(res.Entries[0].DN, password)
-		if err != nil {
-			return nil, fmt.Errorf("Error binding user %s, invalid credentials: %v", username, err)
-		}
+	err = conn.Bind(res.Entries[0].DN, password)
+	if err != nil {
+		return nil, fmt.Errorf("Error binding user %s, invalid credentials: %v", username, err)
 	}
 
 	// Single user entry found

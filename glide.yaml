@@ -1,7 +1,7 @@
 package: github.com/kismatic/kubernetes-ldap
 import:
 - package: github.com/go-ldap/ldap
-  version: 0e7db8eb77695b5a952f0e5d78df9ab160050c73
+  version: 0ae9f2495c4a9e5d436bc9a2b13a71a2fb06ddf3
   subpackages:
   - github.com\go-ldap\ldap
 - package: github.com/golang/glog
