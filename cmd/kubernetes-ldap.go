@@ -33,6 +33,7 @@ var flServerPort = flag.Uint("port", 4000, "Local port this proxy server will ru
 var flTLSCertFile = flag.String("tls-cert-file", "",
 	"File containing x509 Certificate for HTTPS.  (CA cert, if any, concatenated after server cert).")
 var flTLSPrivateKeyFile = flag.String("tls-private-key-file", "", "File containing x509 private key matching --tls-cert-file.")
+var flHttpsDisabled = flag.Bool("https-disabled", false, "Disable HTTPS for this proxy.")
 
 func init() {
 	flag.Usage = func() {
@@ -48,8 +49,11 @@ func main() {
 	// validate required flags
 	requireFlag("--ldap-host", flLdapHost)
 	requireFlag("--ldap-base-dn", flBaseDN)
-	requireFlag("--tls-cert-file", flTLSCertFile)
-	requireFlag("--tls-private-key", flTLSPrivateKeyFile)
+
+	if ! *flHttpsDisabled {
+		requireFlag("--tls-cert-file", flTLSCertFile)
+		requireFlag("--tls-private-key", flTLSPrivateKeyFile)
+	}
 
 	glog.CopyStandardLogTo("INFO")
 
@@ -106,7 +110,12 @@ func main() {
 		// Change default from SSLv3 to TLSv1.0 (because of POODLE vulnerability)
 		MinVersion: tls.VersionTLS10,
 	}
-	glog.Fatal(server.ListenAndServeTLS(*flTLSCertFile, *flTLSPrivateKeyFile))
+
+	if *flHttpsDisabled {
+		glog.Fatal(server.ListenAndServe())
+	} else {
+		glog.Fatal(server.ListenAndServeTLS(*flTLSCertFile, *flTLSPrivateKeyFile))
+	}
 
 }
 
