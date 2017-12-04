@@ -25,14 +25,19 @@ type rsaVerifier struct {
 // NewVerifier reads a verification key file, and returns a verifier
 // to verify token objects.
 func  NewVerifier(basename string) (Verifier, error) {
-	buf, err := ioutil.ReadFile(basename + ".pub")
+	/*buf, err := ioutil.ReadFile(basename + ".pub")
+	if err != nil {
+		return nil, err
+	}*/
+	secret, err := readSigningSecret()
 	if err != nil {
 		return nil, err
 	}
-	pubKey, err := LoadPublicKey(buf)
+	pubKey, err := LoadPublicKey(secret.Data["signing.pub"])
 	if err != nil {
 		return nil, err
 	}
+
 	rsaPublicKey, ok := pubKey.(*rsa.PublicKey)
 	if !ok {
 		return nil, fmt.Errorf("Expected the public key to use ECDSA, but got a key of type %T", pubKey)

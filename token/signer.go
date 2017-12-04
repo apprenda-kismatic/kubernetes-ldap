@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"gopkg.in/square/go-jose.v2"
 	"crypto/rsa"
+	"os"
 )
 
 // Signer signs an issued token
@@ -23,12 +24,15 @@ type rsaSigner struct {
 // NewSigner is, for the moment, a thin wrapper around Square's
 // go-jose library to issue RSA-PS512 JWS tokens.
 func NewSigner(filename string) (Signer, error) {
-	key, err := ioutil.ReadFile(filename + ".priv")
+	/*key, err := ioutil.ReadFile(filename + ".priv")
+	if err != nil {
+		return nil, err
+	}*/
+	secret, err := readSigningSecret()
 	if err != nil {
 		return nil, err
 	}
-
-	privateKey, err := LoadPrivateKey(key)
+	privateKey, err := LoadPrivateKey(secret.Data["signing.priv"])
 	if err != nil {
 		return nil, err
 	}

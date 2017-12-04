@@ -39,6 +39,16 @@ kubernetes-ldap --ldap-host ldap.example.com \
     
 ```
 
+#### Environment Variables
+
+| ENV        | Required? | Description           | 
+|:-------------:|:-------------:|:-------------:|
+|MY_NAMESPACE|no (default: default)|set to the namespace this service is running in|
+|SIGNING_CERT_SECRET_NAME|no (default: ldap-signing-cert-secret)| Specifies the name of the secret which gets created
+
+
+
+
 Deploying the Kubernetes LDAP Service
 ----------------------------------
 Deploy the service into the kube-system namespace of your cluster:

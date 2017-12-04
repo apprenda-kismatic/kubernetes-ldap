@@ -14,3 +14,11 @@
 [[constraint]]
   name = "gopkg.in/square/go-jose.v2"
   version = "2.1.2"
+
+[[constraint]]
+  branch = "release-1.8"
+  name = "k8s.io/apimachinery"
+
+[[constraint]]
+  name = "k8s.io/client-go"
+  version = "5.0.1"
