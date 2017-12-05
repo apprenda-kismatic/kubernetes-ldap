@@ -14,6 +14,7 @@ import (
 	goflag "flag"
 
 	flag "github.com/spf13/pflag"
+	"log"
 )
 
 const (
@@ -135,10 +136,16 @@ func Main() {
 
 
 	if *flHostTLS {
-		go serverPublicTokenEndpoint.ListenAndServeTLS(*flTLSCertFile, *flTLSPrivateKeyFile)
+		go func(){
+			err:= serverPublicTokenEndpoint.ListenAndServeTLS(*flTLSCertFile, *flTLSPrivateKeyFile)
+			log.Fatal(err)
+		}()
 		glog.Fatal(serverForApiServer.ListenAndServeTLS(*flAuthNTLSCertFile, *flAuthNTLSPrivateKeyFile))
 	} else {
-		go serverPublicTokenEndpoint.ListenAndServe()
+		go func(){
+			err := serverPublicTokenEndpoint.ListenAndServe()
+			log.Fatal(err)
+		}()
 		glog.Fatal(serverForApiServer.ListenAndServeTLS(*flAuthNTLSCertFile, *flAuthNTLSPrivateKeyFile))
 	}
 
