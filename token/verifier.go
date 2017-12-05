@@ -3,8 +3,6 @@ package token
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
-
 	"gopkg.in/square/go-jose.v2"
 	"crypto/rsa"
 	"time"
@@ -25,14 +23,11 @@ type rsaVerifier struct {
 // NewVerifier reads a verification key file, and returns a verifier
 // to verify token objects.
 func  NewVerifier(basename string) (Verifier, error) {
-	/*buf, err := ioutil.ReadFile(basename + ".pub")
-	if err != nil {
-		return nil, err
-	}*/
 	secret, err := readSigningSecret()
 	if err != nil {
 		return nil, err
 	}
+
 	pubKey, err := LoadPublicKey(secret.Data["signing.pub"])
 	if err != nil {
 		return nil, err

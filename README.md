@@ -51,7 +51,8 @@ kubernetes-ldap --ldap-host ldap.example.com \
 
 Deploying the Kubernetes LDAP Service
 ----------------------------------
-Deploy the service into the kube-system namespace of your cluster:
+Deploy the service into the kube-system namespace of your cluster. It will require the permissions to create secrets in that namespace!
+Here's the YAML:
 ```yaml
 kind: Deployment
 apiVersion: extensions/v1beta1
@@ -59,7 +60,7 @@ metadata:
   name: k8s-ldap
   namespace: kube-system
 spec:
-  replicas: 1
+  replicas: 3
   template:
     metadata:
       labels:

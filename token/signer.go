@@ -3,10 +3,8 @@ package token
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"gopkg.in/square/go-jose.v2"
 	"crypto/rsa"
-	"os"
 )
 
 // Signer signs an issued token
@@ -32,6 +30,7 @@ func NewSigner(filename string) (Signer, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	privateKey, err := LoadPrivateKey(secret.Data["signing.priv"])
 	if err != nil {
 		return nil, err

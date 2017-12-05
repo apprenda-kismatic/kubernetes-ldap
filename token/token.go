@@ -59,8 +59,8 @@ func writeSigningSecret(privKey, pubKey []byte) error {
 	newSecret := v1.Secret{
 		Type:v1.SecretTypeOpaque,
 		ObjectMeta: metav1.ObjectMeta{Name: getSecretName()},
-		StringData: map[string]string{"signing.pub": string(pubKey[:]), "signing.priv": string(privKey[:])},
-		}
+		Data: map[string][]byte{"signing.priv": privKey, "signing.pub": pubKey},
+	}
 
 	_ , err := getK8sClient().CoreV1().Secrets(getNamespace()).Create(&newSecret)
 
