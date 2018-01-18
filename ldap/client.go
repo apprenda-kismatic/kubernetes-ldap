@@ -7,6 +7,7 @@ import (
 
 	"gopkg.in/ldap.v2"
 )
+
 // Authenticator authenticates a user against an LDAP directory
 type Authenticator interface {
 	Authenticate(username, password string) (*ldap.Entry, error)
@@ -59,11 +60,11 @@ func (c *Client) Authenticate(username, password string) (*ldap.Entry, error) {
 		return nil, fmt.Errorf("Multiple entries found for the search filter '%s': %+v", req.Filter, res.Entries)
 	}
 
-	if c.SearchUserDN == ""{
+	if c.SearchUserDN == "" {
 		return nil, fmt.Errorf("No UserDN was provided, aborting authentication")
 	}
 
-	if c.SearchUserPassword == ""{
+	if c.SearchUserPassword == "" {
 		return nil, fmt.Errorf("No password for user %s was provided, aborting authentication", c.SearchUserDN)
 	}
 
@@ -76,7 +77,6 @@ func (c *Client) Authenticate(username, password string) (*ldap.Entry, error) {
 			return nil, fmt.Errorf("Error binding user %s, invalid credentials: %v", username, err)
 		}
 
-
 		// Single user entry found
 		return res.Entries[0], nil
 	}
@@ -87,7 +87,6 @@ func (c *Client) Authenticate(username, password string) (*ldap.Entry, error) {
 // Create a new TCP connection to the LDAP server
 func (c *Client) dial() (*ldap.Conn, error) {
 	address := fmt.Sprintf("%s:%d", c.LdapServer, c.LdapPort)
-
 
 	if c.TLSConfig != nil && !c.AllowInsecure {
 		return ldap.DialTLS("tcp", address, c.TLSConfig)

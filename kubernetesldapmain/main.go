@@ -6,10 +6,10 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/golang/glog"
 	"github.com/apprenda-kismatic/kubernetes-ldap/auth"
 	"github.com/apprenda-kismatic/kubernetes-ldap/ldap"
 	"github.com/apprenda-kismatic/kubernetes-ldap/token"
+	"github.com/golang/glog"
 
 	goflag "flag"
 
@@ -33,10 +33,10 @@ var flSkipLdapTLSVerification = flag.Bool("ldap-skip-tls-verification", false, "
 var flServerPort = flag.Uint("port", 8080, "Local port this proxy server will run on")
 var flAuthNServerPort = flag.Uint("authn-port", 8443, "Local port this server will run on for AuthN endpoint")
 var flHostTLS = flag.Bool("host-tls", false, "Set to true if you want to host via HTTPS, --tls-cert-file and --tls-private-key-file will be required then.")
-var flTLSCertFile = flag.String("tls-cert-file", "","File containing x509 Certificate for HTTPS.  (CA cert, if any, concatenated after server cert). Requires --host-tls set to true to have an effect!")
+var flTLSCertFile = flag.String("tls-cert-file", "", "File containing x509 Certificate for HTTPS.  (CA cert, if any, concatenated after server cert). Requires --host-tls set to true to have an effect!")
 var flTLSPrivateKeyFile = flag.String("tls-private-key-file", "", "File containing x509 private key matching --tls-cert-file. Requires --host-tls set to true to have an effect!")
 
-var flAuthNTLSCertFile = flag.String("authn-tls-cert-file", "","File containing x509 Certificate for AuthN in-cluster HTTPS.  (CA cert, if any, concatenated after server cert).")
+var flAuthNTLSCertFile = flag.String("authn-tls-cert-file", "", "File containing x509 Certificate for AuthN in-cluster HTTPS.  (CA cert, if any, concatenated after server cert).")
 var flAuthNTLSPrivateKeyFile = flag.String("authn-tls-private-key-file", "", "File containing x509 private key matching --authn-tls-cert-file. ")
 
 func init() {
@@ -84,7 +84,6 @@ func Main() {
 		InsecureSkipVerify: *flSkipLdapTLSVerification,
 	}
 
-
 	ldapClient := &ldap.Client{
 		BaseDN:             *flBaseDN,
 		LdapServer:         *flLdapHost,
@@ -107,7 +106,6 @@ func Main() {
 	routerForApiServer := http.NewServeMux()
 	routerForApiServer.Handle("/authenticate", webhook)
 
-
 	// Endpoint for token issuance after LDAP auth
 	routerPublicTokenEndpoint := http.NewServeMux()
 	routerPublicTokenEndpoint.Handle("/ldapAuth", ldapTokenIssuer)
@@ -123,26 +121,25 @@ func Main() {
 	}
 
 	serverPublicTokenEndpoint := &http.Server{
-		Addr: fmt.Sprintf(":%d", *flServerPort),
-		Handler: routerPublicTokenEndpoint,
+		Addr:      fmt.Sprintf(":%d", *flServerPort),
+		Handler:   routerPublicTokenEndpoint,
 		TLSConfig: tlsCfg,
 	}
 
 	serverForApiServer := &http.Server{
-		Addr: fmt.Sprintf(":%d", *flAuthNServerPort),
-		Handler: routerForApiServer,
+		Addr:      fmt.Sprintf(":%d", *flAuthNServerPort),
+		Handler:   routerForApiServer,
 		TLSConfig: tlsCfg,
 	}
 
-
 	if *flHostTLS {
-		go func(){
-			err:= serverPublicTokenEndpoint.ListenAndServeTLS(*flTLSCertFile, *flTLSPrivateKeyFile)
+		go func() {
+			err := serverPublicTokenEndpoint.ListenAndServeTLS(*flTLSCertFile, *flTLSPrivateKeyFile)
 			log.Fatal(err)
 		}()
 		glog.Fatal(serverForApiServer.ListenAndServeTLS(*flAuthNTLSCertFile, *flAuthNTLSPrivateKeyFile))
 	} else {
-		go func(){
+		go func() {
 			err := serverPublicTokenEndpoint.ListenAndServe()
 			log.Fatal(err)
 		}()
@@ -151,7 +148,7 @@ func Main() {
 
 }
 
-func healthz(w http.ResponseWriter, r *http.Request){
+func healthz(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("ok"))
 }

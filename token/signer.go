@@ -1,10 +1,10 @@
 package token
 
 import (
+	"crypto/rsa"
 	"encoding/json"
 	"fmt"
 	"gopkg.in/square/go-jose.v2"
-	"crypto/rsa"
 )
 
 // Signer signs an issued token

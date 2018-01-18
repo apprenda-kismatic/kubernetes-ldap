@@ -5,8 +5,8 @@ import (
 
 	"github.com/apprenda-kismatic/kubernetes-ldap/ldap"
 	"github.com/apprenda-kismatic/kubernetes-ldap/token"
-	goldap "gopkg.in/ldap.v2"
 	"github.com/golang/glog"
+	goldap "gopkg.in/ldap.v2"
 	"time"
 )
 
@@ -52,7 +52,7 @@ func (lti *LDAPTokenIssuer) ServeHTTP(resp http.ResponseWriter, req *http.Reques
 func (lti *LDAPTokenIssuer) createToken(ldapEntry *goldap.Entry, user string) *token.AuthToken {
 	return &token.AuthToken{
 		Username: user,
-		Exp: time.Now().Add(time.Hour * time.Duration(12)),
+		Exp:      time.Now().Add(time.Hour * time.Duration(12)),
 		Assertions: map[string]string{
 			"ldapServer": lti.LDAPServer,
 			"userDN":     ldapEntry.DN,

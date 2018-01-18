@@ -1,12 +1,12 @@
 package token
 
 import (
+	"crypto/rsa"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"gopkg.in/square/go-jose.v2"
-	"crypto/rsa"
 	"time"
-	"errors"
 )
 
 // Verifier verifies the serialized representation of a token
@@ -22,7 +22,7 @@ type rsaVerifier struct {
 
 // NewVerifier reads a verification key file, and returns a verifier
 // to verify token objects.
-func  NewVerifier(basename string) (Verifier, error) {
+func NewVerifier(basename string) (Verifier, error) {
 	secret, err := readSigningSecret()
 	if err != nil {
 		return nil, err

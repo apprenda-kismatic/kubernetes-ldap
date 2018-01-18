@@ -1,26 +1,24 @@
 package token
 
 import (
-	"k8s.io/client-go/kubernetes"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/api/core/v1"
 	"crypto/rand"
+	"crypto/rsa"
 	"crypto/x509"
 	"fmt"
 	"io/ioutil"
-	"os"
-	"crypto/rsa"
-	"time"
-	"log"
-	"k8s.io/client-go/rest"
+	"k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
+	"log"
+	"os"
+	"time"
 )
-
-
 
 // AuthToken contains information about the authenticated user
 type AuthToken struct {
-	Exp		   time.Time `json:"exp"`
+	Exp        time.Time `json:"exp"`
 	Username   string
 	Assertions map[string]string
 }
@@ -54,18 +52,17 @@ func GenerateKeypair(filename string) (err error) {
 	return
 }
 
-
 func writeSigningSecret(privKey, pubKey []byte) error {
 	newSecret := v1.Secret{
-		Type:v1.SecretTypeOpaque,
+		Type:       v1.SecretTypeOpaque,
 		ObjectMeta: metav1.ObjectMeta{Name: getSecretName()},
-		Data: map[string][]byte{"signing.priv": privKey, "signing.pub": pubKey},
+		Data:       map[string][]byte{"signing.priv": privKey, "signing.pub": pubKey},
 	}
 
-	_ , err := getK8sClient().CoreV1().Secrets(getNamespace()).Create(&newSecret)
+	_, err := getK8sClient().CoreV1().Secrets(getNamespace()).Create(&newSecret)
 
 	// only fail if error wasn't due to already existing secret
-	if err != nil && !k8serrors.IsAlreadyExists(err){
+	if err != nil && !k8serrors.IsAlreadyExists(err) {
 		return err
 	}
 	return nil
@@ -73,7 +70,7 @@ func writeSigningSecret(privKey, pubKey []byte) error {
 
 func readSigningSecret() (*v1.Secret, error) {
 	secret, err := getK8sClient().CoreV1().Secrets(getNamespace()).Get(getSecretName(), metav1.GetOptions{})
-	if err != nil{
+	if err != nil {
 		return nil, err
 	}
 	return secret, nil
@@ -81,7 +78,7 @@ func readSigningSecret() (*v1.Secret, error) {
 
 func getNamespace() string {
 	ns := "default"
-	if os.Getenv("MY_NAMESPACE") != ""{
+	if os.Getenv("MY_NAMESPACE") != "" {
 		ns = os.Getenv("MY_NAMESPACE")
 	}
 	return ns
@@ -89,7 +86,7 @@ func getNamespace() string {
 
 func getSecretName() string {
 	ns := "ldap-signing-cert-secret"
-	if os.Getenv("SIGNING_CERT_SECRET_NAME") != ""{
+	if os.Getenv("SIGNING_CERT_SECRET_NAME") != "" {
 		ns = os.Getenv("SIGNING_CERT_SECRET_NAME")
 	}
 	return ns

@@ -1,12 +1,10 @@
 package token
 
 import (
-	"encoding/pem"
 	"crypto/x509"
+	"encoding/pem"
 	"fmt"
 )
-
-
 
 // LoadPublicKey loads a public key from PEM/DER-encoded data.
 func LoadPublicKey(data []byte) (interface{}, error) {
