@@ -7,7 +7,6 @@ import (
 
 	"gopkg.in/ldap.v2"
 )
-
 // Authenticator authenticates a user against an LDAP directory
 type Authenticator interface {
 	Authenticate(username, password string) (*ldap.Entry, error)
@@ -60,6 +59,14 @@ func (c *Client) Authenticate(username, password string) (*ldap.Entry, error) {
 		return nil, fmt.Errorf("Multiple entries found for the search filter '%s': %+v", req.Filter, res.Entries)
 	}
 
+	if c.SearchUserDN == ""{
+		return nil, fmt.Errorf("No UserDN was provided, aborting authentication")
+	}
+
+	if c.SearchUserPassword == ""{
+		return nil, fmt.Errorf("No password for user %s was provided, aborting authentication", c.SearchUserDN)
+	}
+
 	// Now that we know the user exists within the BaseDN scope
 	// let's do user bind to check credentials using the full DN instead of
 	// the attribute used for search
@@ -68,10 +75,13 @@ func (c *Client) Authenticate(username, password string) (*ldap.Entry, error) {
 		if err != nil {
 			return nil, fmt.Errorf("Error binding user %s, invalid credentials: %v", username, err)
 		}
+
+
+		// Single user entry found
+		return res.Entries[0], nil
 	}
 
-	// Single user entry found
-	return res.Entries[0], nil
+	return nil, fmt.Errorf("Something was wrong while authenticating the user. The latest error was %s", err.Error())
 }
 
 // Create a new TCP connection to the LDAP server

@@ -20,7 +20,7 @@ type LDAPTokenIssuer struct {
 
 func (lti *LDAPTokenIssuer) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 	user, password, ok := req.BasicAuth()
-	if !ok {
+	if !ok || password == "" || user == "" {
 		resp.Header().Add("WWW-Authenticate", `Basic realm="kubernetes ldap"`)
 		resp.WriteHeader(http.StatusUnauthorized)
 		return
