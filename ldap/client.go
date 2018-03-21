@@ -6,6 +6,10 @@ import (
 	"fmt"
 
 	"gopkg.in/ldap.v2"
+	"os"
+	"io/ioutil"
+	"log"
+	"strings"
 )
 
 // Authenticator authenticates a user against an LDAP directory
@@ -29,6 +33,9 @@ type Client struct {
 // Authenticate a user against the LDAP directory. Returns an LDAP entry if password
 // is valid, otherwise returns an error.
 func (c *Client) Authenticate(username, password string) (*ldap.Entry, error) {
+	if isUserInBlacklist(username) {
+		return nil, fmt.Errorf("This user is blacklisted. If you think this is an error contact an admin!")
+	}
 	conn, err := c.dial()
 	if err != nil {
 		return nil, fmt.Errorf("Error opening LDAP connection: %v", err)
@@ -113,4 +120,48 @@ func (c *Client) newUserSearchRequest(username string) *ldap.SearchRequest {
 		TypesOnly:    false,
 		Filter:       userFilter,
 	}
+}
+
+func isUserInBlacklist(username string) bool {
+	blacklistFile := getBlacklistFilePath()
+	blacklistPresent, err := fileExists(blacklistFile)
+	if err != nil {
+		log.Printf("An error occurred while tryin to read the blacklist file from file %s. Err: %s", blacklistFile, err)
+		return false
+	}
+	if !blacklistPresent {
+		return false
+	}
+
+	// actually check blacklist
+	file, err := ioutil.ReadFile(blacklistFile)
+	if err != nil {
+		log.Printf("An error occurred while tryin to read the blacklist file from file %s. Err: %s", blacklistFile, err)
+		return false
+	}
+	blacklistedUsers := strings.Split(string(file), "\n")
+	for _, blacklistedUser := range blacklistedUsers {
+		if blacklistedUser == username {
+			return true
+		}
+	}
+	return false
+}
+
+func fileExists(filename string) (bool, error) {
+	if _, err := os.Stat(filename); os.IsNotExist(err) {
+		return false, nil
+	} else if err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
+func getBlacklistFilePath() string {
+	file := "/etc/blacklist"
+	envFile := os.Getenv("BLACKLIST_FILEPATH")
+	if envFile != "" {
+		file = envFile
+	}
+	return file
 }
