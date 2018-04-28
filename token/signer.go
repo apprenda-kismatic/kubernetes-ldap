@@ -1,12 +1,10 @@
 package token
 
 import (
-	"crypto/ecdsa"
+	"crypto/rsa"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
-
-	"github.com/square/go-jose"
+	"gopkg.in/square/go-jose.v2"
 )
 
 // Signer signs an issued token
@@ -15,52 +13,49 @@ type Signer interface {
 	Sign(token *AuthToken) (string, error)
 }
 
-// ecdsaSigner represents a signer of tokens under a particular public key.
-type ecdsaSigner struct {
-	ecdsaVerifier
+// rsaSigner represents a signer of tokens under a particular public key.
+type rsaSigner struct {
+	rsaVerifier
 	signer jose.Signer
 }
 
 // NewSigner is, for the moment, a thin wrapper around Square's
-// go-jose library to issue ECDSA-P256 JWS tokens.
+// go-jose library to issue RSA-PS512 JWS tokens.
 func NewSigner(filename string) (Signer, error) {
-	// We use P-256, because Go has a constant-time implementation
-	// of it. Go correctly checks that points are on the curve. A
-	// version of Go > 1.4 is recommended, because ECDSA signatures
-	// in previous versions are unsafe.
-	key, err := ioutil.ReadFile(filename + ".priv")
+	/*key, err := ioutil.ReadFile(filename + ".priv")
+	if err != nil {
+		return nil, err
+	}*/
+	secret, err := readSigningSecret()
 	if err != nil {
 		return nil, err
 	}
 
-	privateKey, err := jose.LoadPrivateKey(key)
+	privateKey, err := LoadPrivateKey(secret.Data["signing.priv"])
 	if err != nil {
 		return nil, err
 	}
-	// TODO(dlg): Once JOSE supports it, make sure that this works for curve25519
-	// Check that it's actually an ECDSA key,
-	ecdsaKey, ok := privateKey.(*ecdsa.PrivateKey)
+
+	// Check that it's actually an RSA key,
+	rsaKey, ok := privateKey.(*rsa.PrivateKey)
 	if !ok {
-		return nil, fmt.Errorf("expected an ECDSA private key, but got a key of type %T", privateKey)
-	}
-	// and that it's on the expected curve.
-	if ecdsaKey.Params().Name != curveName {
-		return nil, fmt.Errorf("expected the key to use %s, but it's using %s", curveName, ecdsaKey.Params().Name)
+		return nil, fmt.Errorf("expected an RSA private key, but got a key of type %T", privateKey)
 	}
 
-	signer, err := jose.NewSigner(curveJose, privateKey)
+	signer, err := jose.NewSigner(jose.SigningKey{jose.PS512, privateKey}, nil)
 	if err != nil {
 		return nil, err
 	}
-	ecdsaSigner := &ecdsaSigner{
+
+	rsaSigner := &rsaSigner{
 		signer: signer,
 	}
-	ecdsaSigner.publicKey = &ecdsaKey.PublicKey
-	return ecdsaSigner, nil
+	rsaSigner.publicKey = &rsaKey.PublicKey
+	return rsaSigner, nil
 }
 
 // Sign an authentcation token and return the serialized JWS
-func (es *ecdsaSigner) Sign(token *AuthToken) (string, error) {
+func (es *rsaSigner) Sign(token *AuthToken) (string, error) {
 	tokenBytes, err := json.Marshal(token)
 	if err != nil {
 		// panic? what are the conditions under which this can fail?

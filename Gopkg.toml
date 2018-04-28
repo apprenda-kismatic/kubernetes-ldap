@@ -1,0 +1,24 @@
+[[constraint]]
+  name = "gopkg.in/ldap.v2"
+  #version = "2.5.0"
+  #revision = "81498f9194233d3bce29b7ce4a3d92900f0d635c"
+
+[[constraint]]
+  name = "github.com/golang/glog"
+  revision = "65d674618f712aa808a7d0104131b9206fc3d5ad"
+
+[[constraint]]
+  name = "github.com/spf13/pflag"
+  version = "1.0.0"
+
+[[constraint]]
+  name = "gopkg.in/square/go-jose.v2"
+  version = "2.1.2"
+
+[[constraint]]
+  branch = "release-1.8"
+  name = "k8s.io/apimachinery"
+
+[[constraint]]
+  name = "k8s.io/client-go"
+  version = "5.0.1"
